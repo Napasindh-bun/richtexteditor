@@ -1,0 +1,107 @@
+/* ============================================================
+ * Layer 3 — Component tokens
+ *
+ * UI-primitive-specific tokens for src/components/ui/** only.
+ * References primitives from default.css via var().
+ * Must NOT be used in feature module CSS.
+ * ============================================================ */
+
+@theme {
+  /* ===== Button tokens — Ant Design (Aksorn) ===== */
+  /* Source: https://www.figma.com/design/wI2IFJkD5MqELMxtOZlkT6/Ant-Design---Aksorn?node-id=34701-197 */
+
+  --color-btn-primary: var(--brand-red);
+  --color-btn-primary-hover: var(--brand-red-hover);
+  --color-btn-primary-active: var(--brand-red-active);
+  --color-btn-primary-fg: var(--white);
+
+  --color-btn-secondary-border: var(--neutral-border);
+  --color-btn-secondary-border-hover: var(--brand-red);
+  --color-btn-secondary-fg: var(--alpha-black-88);
+  --color-btn-secondary-fg-hover: var(--brand-red);
+
+  --color-btn-danger-outline-fg: var(--danger-500);
+  --color-btn-danger-outline-fg-hover: var(--danger-400);
+  --color-btn-danger-outline-border: var(--danger-500);
+  --color-btn-danger-outline-border-hover: var(--danger-400);
+
+  --color-btn-danger-primary: var(--danger-500);
+  --color-btn-danger-primary-hover: var(--danger-400);
+  --color-btn-danger-primary-active: var(--danger-600);
+  --color-btn-danger-primary-fg: var(--white);
+
+  --color-btn-link-fg: var(--brand-red);
+  --color-btn-link-fg-hover: var(--brand-red-hover);
+
+  --color-btn-text-fg: var(--alpha-black-88);
+  --color-btn-text-bg-hover: var(--alpha-black-6);
+
+  --color-btn-ghost-primary-fg: var(--brand-red);
+  --color-btn-ghost-primary-border: var(--brand-red);
+  --color-btn-ghost-secondary-fg: var(--white);
+  --color-btn-ghost-secondary-border: var(--white);
+  --color-btn-ghost-danger-fg: var(--danger-500);
+  --color-btn-ghost-danger-border: var(--danger-500);
+
+  --color-btn-disabled-bg: var(--alpha-black-4);
+  --color-btn-disabled-border: var(--neutral-border);
+  --color-btn-disabled-fg: var(--alpha-black-25);
+
+  --shadow-btn-primary: 0px 2px 0px 0px var(--shadow-black-sm);
+  --shadow-btn-secondary: 0px 2px 0px 0px var(--shadow-black-xs);
+
+  /* ===== Input tokens ===== */
+  --color-input-bg: var(--white);
+  --color-input-border: var(--neutral-border);
+  --color-input-text: var(--alpha-black-88);
+  --color-input-placeholder: var(--alpha-black-25);
+  --color-input-border-active: var(--brand-red-active);
+  --color-input-bg-disabled: var(--alpha-black-4);
+  --color-input-text-disabled: var(--alpha-black-25);
+  --color-input-addon-bg: var(--neutral-50);
+  --color-input-addon-border: var(--neutral-border);
+  --color-input-addon-text: var(--alpha-black-85);
+  --shadow-input-active: 0px 0px 0px 2px var(--brand-red-glow);
+
+  /* ===== Textarea tokens ===== */
+  --color-textarea-bg: var(--white);
+  --color-textarea-border: var(--neutral-border);
+  --color-textarea-border-hover: var(--brand-red-input);
+  --color-textarea-border-focus: var(--brand-red-input);
+  --color-textarea-text: var(--alpha-black-85);
+  --color-textarea-placeholder: var(--alpha-black-25);
+  --color-textarea-count: var(--alpha-black-25);
+  --color-textarea-bg-disabled: var(--neutral-100);
+  --color-textarea-text-disabled: var(--alpha-black-25);
+  --radius-textarea: 6px;
+  --shadow-textarea-focus: 0px 0px 0px 2px var(--brand-red-glow);
+
+  /* ===== Pagination tokens ===== */
+  --color-pagination-bg: var(--white);
+  --color-pagination-border: var(--neutral-border);
+  --color-pagination-text: var(--alpha-black-85);
+  --color-pagination-text-disabled: var(--alpha-black-25);
+  --color-pagination-active-border: var(--brand-red-input);
+  --color-pagination-active-text: var(--brand-red-input);
+  --color-pagination-active-bg-disabled: var(--neutral-border);
+  --color-pagination-active-text-disabled: var(--white);
+  --color-pagination-bg-disabled: var(--neutral-100);
+  --color-pagination-ellipsis: var(--alpha-black-25);
+  --radius-pagination: 2px;
+
+  /* ===== Skeleton tokens ===== */
+  --color-skeleton-bg: var(--neutral-100);
+  --radius-skeleton-circle: 999px;
+
+  /* ===== Checkbox tokens ===== */
+  --color-checkbox-bg: var(--white);
+  --color-checkbox-border: var(--neutral-700);
+  --color-checkbox-checked-bg: var(--brand-red-input);
+  --color-checkbox-checked-border: var(--brand-red-input);
+  --color-checkbox-checked-fg: var(--white);
+  --color-checkbox-indeterminate: var(--brand-red-input);
+  --color-checkbox-disabled-bg: var(--neutral-100);
+  --color-checkbox-disabled-border: var(--neutral-border);
+  --color-checkbox-disabled-fg: var(--alpha-black-25);
+  --radius-checkbox: 2px;
+}

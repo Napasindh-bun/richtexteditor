@@ -1,0 +1,294 @@
+@reference "../../../../app/globals.css";
+
+@layer components {
+  .shell {
+    @apply flex flex-col overflow-hidden rounded-md border border-input bg-background;
+  }
+
+  .toolbar {
+    @apply flex flex-wrap items-center gap-1 border-b border-input bg-muted/40 px-2 py-1.5;
+  }
+
+  .toolbarButton {
+    @apply inline-flex h-8 w-8 items-center justify-center rounded text-foreground/80 transition-colors hover:bg-accent hover:text-accent-foreground;
+  }
+
+  .toolbarButton :global(svg) {
+    @apply size-4;
+  }
+
+  .toolbarButtonActive {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  .toolbarButtonDisabled {
+    @apply pointer-events-none opacity-40;
+  }
+
+  .divider {
+    @apply mx-1 h-5 w-px bg-input;
+  }
+
+  .tablePickerWrap {
+    @apply relative;
+  }
+
+  .tablePicker {
+    @apply absolute left-0 top-full z-20 mt-1 min-w-[11.5rem] rounded-md border border-input bg-background p-2.5 shadow-md;
+  }
+
+  .tableGrid {
+    @apply grid gap-1;
+    grid-template-columns: repeat(8, 1.125rem);
+    grid-template-rows: repeat(8, 1.125rem);
+  }
+
+  .tableCell {
+    @apply size-[1.125rem] rounded-[2px] border border-neutral-300 bg-white transition-colors;
+  }
+
+  /* Compound selector beats @apply utility order so active cells stay visible. */
+  .tableCell.tableCellActive {
+    border-color: #0ea5e9;
+    background-color: #bae6fd;
+  }
+
+  .tablePickerLabel {
+    @apply mt-2 text-center text-xs tabular-nums text-foreground/70;
+  }
+
+  .colorPickerWrap {
+    @apply relative;
+  }
+
+  .colorPicker {
+    @apply absolute left-0 top-full z-20 mt-1 min-w-[13.5rem] rounded-md border border-input bg-background p-2.5 shadow-md;
+  }
+
+  .colorPickerBody {
+    @apply flex flex-col gap-2.5;
+  }
+
+  .colorPickerTitle {
+    @apply m-0 text-xs font-medium text-foreground/70;
+  }
+
+  .colorSection {
+    @apply flex flex-col gap-1.5;
+  }
+
+  .colorSectionLabel {
+    @apply m-0 text-[11px] font-medium uppercase tracking-wide text-foreground/55;
+  }
+
+  .colorGrid {
+    @apply grid grid-cols-8 gap-1.5;
+  }
+
+  .srOnly {
+    @apply sr-only;
+  }
+
+  .colorSwatch {
+    @apply size-5 rounded-sm border border-black/10 transition-transform hover:scale-105;
+  }
+
+  .colorSwatchLight {
+    @apply border-neutral-300;
+  }
+
+  .colorSwatchActive {
+    @apply ring-2 ring-sky-500 ring-offset-1;
+  }
+
+  .colorCustomRow,
+  .colorClearRow {
+    @apply inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-input text-xs text-foreground/80 hover:bg-accent hover:text-accent-foreground;
+  }
+
+  .colorCustomRow :global(svg),
+  .colorClearRow :global(svg) {
+    @apply size-3.5;
+  }
+
+  .colorTriggerIcon {
+    @apply relative inline-flex flex-col items-center;
+  }
+
+  .colorTriggerBar {
+    @apply absolute bottom-0 left-0.5 right-0.5 h-0.5 rounded-sm;
+  }
+
+  .doubleUnderlineIcon {
+    @apply relative inline-flex size-4 items-center justify-center text-[13px] font-semibold leading-none;
+  }
+
+  .doubleUnderlineIcon::after {
+    content: '';
+    @apply absolute bottom-0 left-0 right-0;
+    border-bottom: 3px double currentColor;
+  }
+
+  .blockSelect {
+    @apply h-8 rounded border border-input bg-background px-2 text-sm text-foreground;
+  }
+
+  .editorScroll {
+    @apply min-h-0 flex-1 overflow-auto px-3 py-2;
+  }
+
+  .hiddenInput {
+    @apply hidden;
+  }
+
+  /* ProseMirror surface — default body text is 16px. */
+  .editorContent {
+    font-family: Arial, 'Sarabun', sans-serif;
+    font-size: 16px;
+    @apply min-h-full font-normal text-[#333] outline-none;
+  }
+
+  .editorContent :global(p) {
+    @apply my-1.5 font-normal;
+  }
+
+  .editorContent :global(ul) {
+    @apply my-1.5 list-disc pl-6;
+  }
+
+  .editorContent :global(ol) {
+    @apply my-1.5 list-decimal pl-6;
+  }
+
+  .editorContent :global(a) {
+    @apply text-primary underline;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+
+  .editorContent :global(mark) {
+    @apply rounded-sm px-0.5;
+  }
+
+  .editorContent :global([data-double-underline]) {
+    text-decoration-line: underline;
+    text-decoration-style: double;
+  }
+
+  .editorContent :global(img) {
+    @apply my-1 block h-auto max-w-full;
+  }
+
+  .editorContent :global(img[data-align='left']) {
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .editorContent :global(img[data-align='center']) {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .editorContent :global(img[data-align='right']) {
+    margin-left: auto;
+    margin-right: 0;
+  }
+
+  .editorContent :global(.tiptap-mathematics-render--editable) {
+    cursor: pointer;
+  }
+
+  .editorContent :global(.tiptap-mathematics-render--editable:hover) {
+    outline: 1px dashed color-mix(in srgb, currentColor 35%, transparent);
+    outline-offset: 2px;
+  }
+
+  .editorContent :global(.tableWrapper) {
+    @apply my-2 w-full max-w-full overflow-x-auto;
+  }
+
+  .editorContent :global(table) {
+    /* TipTap TableView sets inline width when columns have colwidth. */
+    @apply my-0 border-collapse;
+    width: 100%;
+    table-layout: fixed;
+    --rte-border-width: 1px;
+    --rte-border-style: solid;
+    --rte-border-color: #d1d5db;
+    --rte-cell-padding: 0.375rem;
+  }
+
+  .editorContent :global(table[data-align='left']) {
+    float: left;
+  }
+
+  .editorContent :global(table[data-align='right']) {
+    float: right;
+  }
+
+  .editorContent :global(table[data-align='center']) {
+    margin-left: auto;
+    margin-right: auto;
+    float: none;
+  }
+
+  .editorContent :global(table[data-show-caption='true']::before) {
+    content: 'Caption';
+    display: table-caption;
+    caption-side: top;
+    @apply py-1 text-center text-xs text-foreground/60;
+  }
+
+  .editorContent :global(td),
+  .editorContent :global(th) {
+    border-width: var(--rte-border-width);
+    border-style: var(--rte-border-style);
+    border-color: var(--rte-border-color);
+    padding: var(--rte-cell-padding);
+    min-width: 0;
+    overflow-wrap: anywhere;
+    position: relative;
+  }
+
+  .editorContent :global(th) {
+    @apply bg-muted/50 font-semibold;
+  }
+
+  /* TipTap / prosemirror-tables column resize handle (visual only; drag via plugin). */
+  .editorContent :global(.column-resize-handle) {
+    @apply pointer-events-none absolute top-0 bottom-0 z-20 w-1 -right-0.5 bg-sky-300;
+  }
+
+  /* TipTap adds `.resize-cursor` on the editor root while hovering a column edge. */
+  .editorContent:global(.resize-cursor) {
+    cursor: col-resize;
+  }
+
+  /* Soft fill for the active/selected cell — no blue edge lines. */
+  .editorContent :global(.selectedCell::after) {
+    content: '';
+    @apply pointer-events-none absolute inset-0;
+    background: color-mix(in srgb, #0ea5e9 12%, transparent);
+  }
+
+  /* MathLive dialog */
+  .mathBody {
+    @apply mt-4 flex flex-col gap-3 text-left;
+  }
+
+  .mathHost {
+    @apply min-h-[64px] rounded-md border border-input bg-background px-3 py-2;
+  }
+
+  .mathField {
+    @apply block w-full text-xl;
+  }
+
+  .mathKeyboardToggle {
+    @apply self-start rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-accent hover:text-accent-foreground;
+  }
+
+  .actions {
+    @apply mt-6 flex justify-center gap-3;
+  }
+}

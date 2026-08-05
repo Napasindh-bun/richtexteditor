@@ -1,0 +1,19 @@
+@reference "../../../../app/globals.css";
+
+@layer components {
+  .dialog {
+    @apply max-w-[920px];
+  }
+
+  .title {
+    @apply text-left;
+  }
+
+  .editorShell {
+    @apply mt-5 text-left;
+  }
+
+  .actions {
+    @apply mt-6 flex justify-center gap-3;
+  }
+}

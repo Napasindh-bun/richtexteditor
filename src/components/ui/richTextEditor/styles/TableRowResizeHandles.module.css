@@ -1,0 +1,18 @@
+@reference "../../../../app/globals.css";
+
+@layer components {
+  /* Match TipTap column-resize-handle look, oriented for rows. */
+  .handle {
+    @apply pointer-events-auto fixed z-[100] cursor-row-resize border-0 bg-transparent p-0 opacity-70 transition-opacity;
+  }
+
+  .handle:hover,
+  .handle:focus-visible {
+    @apply opacity-100;
+  }
+
+  .handle::after {
+    content: '';
+    @apply absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-sky-300;
+  }
+}

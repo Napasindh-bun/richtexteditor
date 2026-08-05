@@ -1,0 +1,54 @@
+/* ============================================================
+ * Dark theme — Aksorn brand
+ *
+ * Overrides Layer 1 primitives under .dark.
+ * Semantic, feature, and component token files reference these
+ * via var() and adapt automatically — no changes needed above.
+ * ============================================================ */
+
+.dark {
+  /* ── Neutral surfaces (inverted) ───────────────────────── */
+  --white: #2e2f38;
+  --off-white: #1a1b22;
+  --near-black: #f0f0f2;
+
+  --grey-10: #3a3b46;
+  --grey-20: #5c5e70;
+  --grey-40: #8f91a3;
+  --grey-60: #c7c8d1;
+  --grey-notif: #2a2b34;
+
+  --neutral-50: #2a2b34;
+  --neutral-100: #333440;
+  --neutral-300: #3a3b46;
+  --neutral-border: #4a4b58;
+  --neutral-mid: #5c5e70;
+  --neutral-700: #8f91a3;
+
+  /* ── Brand tints (deepened for dark backgrounds) ─────────── */
+  --tint-red-50: #2a1a1b;
+  --tint-red-100: #3a2022;
+  --tint-red-200: #1f1516;
+  --tint-orange-50: #2a2018;
+  --tint-orange-100: #2a2218;
+  --tint-green-50: #1a2a22;
+  --tint-yellow-50: #2a2818;
+
+  /* ── Text alpha (white-on-dark, replaces black-alpha) ────── */
+  --alpha-black-4: #ffffff0a;
+  --alpha-black-6: #ffffff0f;
+  --alpha-black-25: #ffffff40;
+  --alpha-black-45: #ffffff73;
+  --alpha-black-65: #ffffffa6;
+  --alpha-black-85: #ffffffd9;
+  --alpha-black-88: #ffffffe0;
+  --alpha-black-90: #ffffffe6;
+
+  /* ── Shadows (stronger on dark canvas) ───────────────────── */
+  --shadow-near-black: #00000040;
+  --shadow-black-sm: #00000020;
+  --shadow-black-xs: #00000014;
+  --shadow-navbar-primitive: 4px 0 8px rgba(0, 0, 0, 0.35);
+
+  /* Brand, status, danger, orange — unchanged */
+}

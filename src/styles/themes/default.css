@@ -1,0 +1,83 @@
+/* ============================================================
+ * Default theme — Aksorn brand
+ *
+ * All raw palette values live here as plain CSS custom
+ * properties on :root.  tokens/*.css reference
+ * these via var() so swapping themes only requires overriding
+ * the variables in themes/dark.css under .dark.
+ * ============================================================ */
+
+:root {
+  /* ── Brand red ─────────────────────────────────────────── */
+  --brand-red: #ed1c24; /* primary / default state  */
+  --brand-red-hover: #ce1017; /* hover state              */
+  --brand-red-active: #990c11; /* pressed / active state   */
+  --brand-red-dark: #c41218; /* dark variant             */
+  --brand-red-input: #e8121a; /* input / textarea / pagination border */
+  --brand-red-glow: #ed1c2440; /* focus ring (25 % opacity) */
+
+  /* ── Danger (destructive actions) ─────────────────────── */
+  --danger-400: #ff7875; /* hover  */
+  --danger-500: #ff4d4f; /* default */
+  --danger-600: #d9363e; /* active  */
+
+  /* ── Orange / Amber ───────────────────────────────────── */
+  --orange: #ff8200;
+  --amber-400: #faad14;
+  --amber-500: #f99d34;
+  --yellow: #f2be15;
+
+  /* ── Status ───────────────────────────────────────────── */
+  --status-active: #0099db;
+  --status-success: #6fcf97;
+  --status-error: #ed1c24;
+  --status-warn: #f99d34;
+  --status-reject: #f2be15;
+
+  /* ── Neutral ──────────────────────────────────────────── */
+  --white: #ffffff;
+  --off-white: #fbfbfb;
+  --near-black: #2e2f38;
+
+  --grey-10: #e3e4e8;
+  --grey-20: #c7c8d1;
+  --grey-40: #8f91a3;
+  --grey-60: #5c5e70;
+  --grey-notif: #f4f4f6;
+
+  --neutral-50: #fafafa; /* input addon background   */
+  --neutral-100: #f5f5f5; /* disabled background      */
+  --neutral-300: #f0f0f0; /* dividers / footer border */
+  --neutral-border: #d9d9d9; /* general border           */
+  --neutral-mid: #bfbfbf; /* mid-tone border          */
+  --neutral-700: #8c8c8c; /* Neutral/7 — checkbox unchecked border */
+
+  /* ── Brand tints (light washes) ──────────────────────── */
+  --tint-red-50: #fff7f7; /* tertiary bg / error light     */
+  --tint-red-100: #ffe5e6; /* light pink                    */
+  --tint-red-200: #fff2f0; /* exam / waiting page bg        */
+  --tint-orange-50: #fff7ed; /* choice active background      */
+  --tint-orange-100: #fffaf5; /* system processing light       */
+  --tint-green-50: #f2fff8; /* system success light          */
+  --tint-yellow-50: #fffae2; /* system reject light           */
+
+  /* ── Black alpha scales ───────────────────────────────── */
+  --alpha-black-4: #0000000a; /*  4 % — disabled bg / input disabled   */
+  --alpha-black-6: #0000000f; /*  6 % — text-button hover bg           */
+  --alpha-black-25: #00000040; /* 25 % — placeholder / disabled fg      */
+  --alpha-black-45: #00000073; /* 45 % — muted / caption text           */
+  --alpha-black-65: #000000a6; /* 65 % — secondary body text          */
+  --alpha-black-85: #000000d9; /* 85 % — body text                      */
+  --alpha-black-88: #000000e0; /* 88 % — button / input text            */
+  --alpha-black-90: #000000e6; /* 90 % — emphasis text                  */
+
+  /* ── White alpha scales (inverse surfaces, e.g. editor navbar) ── */
+  --alpha-white-10: #ffffff1a; /* 10 % — subtle hover on brand header  */
+  --alpha-white-20: #ffffff33; /* 20 % — hover on brand header         */
+
+  /* ── Shadows ──────────────────────────────────────────── */
+  --shadow-near-black: #2e2f381a; /* card / box shadows */
+  --shadow-black-sm: #0000000b; /* button primary drop */
+  --shadow-black-xs: #00000004; /* button secondary drop */
+  --shadow-navbar-primitive: 4px 0 8px rgba(46, 47, 56, 0.1); /* navbar elevation */
+}

@@ -1,0 +1,102 @@
+@reference "../../../../app/globals.css";
+
+@layer components {
+  .preview {
+    @apply w-full max-w-full overflow-hidden text-left text-small-r text-text-primary;
+  }
+
+  .preview :global(p) {
+    @apply my-0.5;
+  }
+
+  .preview :global(p:first-child) {
+    @apply mt-0;
+  }
+
+  .preview :global(p:last-child) {
+    @apply mb-0;
+  }
+
+  .preview :global(ul) {
+    @apply my-0.5 list-disc pl-5;
+  }
+
+  .preview :global(ol) {
+    @apply my-0.5 list-decimal pl-5;
+  }
+
+  .preview :global(table) {
+    @apply my-0.5 max-w-full;
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse;
+    --rte-border-width: 1px;
+    --rte-border-style: solid;
+    --rte-border-color: #d1d5db;
+  }
+
+  .preview :global(td),
+  .preview :global(th) {
+    @apply p-1 align-top;
+    border-width: var(--rte-border-width);
+    border-style: var(--rte-border-style);
+    border-color: var(--rte-border-color);
+    min-width: 0;
+    max-width: 0;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .preview :global(img) {
+    @apply my-1 block h-auto max-w-full;
+  }
+
+  .preview :global(img[data-align='left']) {
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .preview :global(img[data-align='center']) {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .preview :global(img[data-align='right']) {
+    margin-left: auto;
+    margin-right: 0;
+  }
+
+  .preview :global(a) {
+    @apply text-text-accent underline;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+
+  .preview :global(mark) {
+    @apply rounded-sm px-0.5;
+  }
+
+  .preview :global([data-double-underline]) {
+    text-decoration-line: underline;
+    text-decoration-style: double;
+  }
+
+  .preview :global(.katex) {
+    @apply text-[0.95em] leading-normal;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+
+  .preview :global(.katex-html) {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .preview :global(.katex .base) {
+    max-width: 100%;
+    overflow: hidden;
+  }
+}

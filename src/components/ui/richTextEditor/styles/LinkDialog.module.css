@@ -1,0 +1,15 @@
+@reference "../../../../app/globals.css";
+
+@layer components {
+  .body {
+    @apply mt-4 space-y-2 text-left;
+  }
+
+  .label {
+    @apply text-sm font-medium text-text-primary;
+  }
+
+  .hint {
+    @apply text-xs text-text-secondary;
+  }
+}

@@ -1,0 +1,33 @@
+/* Layer 2b — Feature semantic tokens (authoring tool) */
+
+@theme {
+  --color-authoring-page-bg: var(--neutral-100);
+  --color-authoring-card-bg: var(--white);
+  --color-authoring-card-border: var(--neutral-border);
+
+  --color-authoring-navbar-border: var(--color-text-inverse);
+  --color-authoring-navbar-hover: var(--alpha-white-20);
+  --color-authoring-navbar-hover-subtle: var(--alpha-white-10);
+  --color-authoring-overlay-scrim: var(--alpha-black-6);
+  --color-authoring-modal-scrim: rgb(0 0 0 / 30%);
+  --color-authoring-control-hover: var(--alpha-black-6);
+  --color-authoring-folder-avatar: var(--orange);
+  --color-authoring-favorite: var(--orange);
+
+  --color-authoring-image-id-badge-bg: #e6f7ff;
+  --color-authoring-image-id-badge-border: #096dd9;
+  --color-authoring-image-id-badge-fg: #096dd9;
+  --color-authoring-image-id-index-bg: #f04349;
+
+  --color-authoring-sequence-badge-bg: #e6fffb;
+  --color-authoring-sequence-badge-border: #13c2c2;
+  --color-authoring-sequence-badge-fg: #08979c;
+
+  --color-authoring-choice-badge-bg: #e6f7ff;
+  --color-authoring-choice-badge-border: #1890ff;
+  --color-authoring-choice-badge-fg: #096dd9;
+  --color-authoring-choice-index-bg: #f04349;
+  --color-authoring-choice-letter-bg: #fff2f0;
+  --color-authoring-choice-letter-fg: #ed1c24;
+  --color-authoring-choice-audio: #f04349;
+}

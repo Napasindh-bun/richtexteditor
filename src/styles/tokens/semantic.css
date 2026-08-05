@@ -1,0 +1,110 @@
+/* ============================================================
+ * Layer 2 — Semantic tokens
+ *
+ * Purpose-based tokens mapped from primitives (default.css).
+ * Consumed by: feature module CSS, shadcn bridge (globals.css).
+ * Must NOT be referenced directly from primitives in module CSS.
+ * ============================================================ */
+
+@theme {
+  /* ===== Brand ===== */
+  --color-brand: var(--brand-red);
+  --color-brand-hover: var(--brand-red-hover);
+  --color-brand-active: var(--brand-red-active);
+  --color-brand-dark: var(--brand-red-dark);
+
+  /* @deprecated — use --color-brand; kept for backward compatibility */
+  --color-primary-main: var(--color-brand);
+  --color-primary-red: var(--color-brand);
+  --color-primary-dark-red: var(--brand-red-dark);
+
+  /* ===== Text ===== */
+  --color-text-primary: var(--alpha-black-85);
+  --color-text-secondary: var(--alpha-black-65);
+  --color-text-muted: var(--alpha-black-45);
+  --color-text-emphasis: var(--alpha-black-90);
+  --color-text-inverse: var(--white);
+  --color-text-accent: var(--brand-red);
+
+  /* ===== Surface ===== */
+  --color-surface-default: var(--white);
+  --color-surface-subtle: var(--off-white);
+  --color-surface-muted: var(--neutral-100);
+
+  /* ===== Border ===== */
+  --color-border-default: var(--neutral-border);
+  --color-border-subtle: var(--neutral-300);
+
+  /* ===== Grey scale (legacy secondary naming) ===== */
+  --color-secondary-white: var(--off-white);
+  --color-secondary-black: var(--near-black);
+  --color-secondary-grey-10: var(--grey-10);
+  --color-secondary-grey-20: var(--grey-20);
+  --color-secondary-grey-40: var(--grey-40);
+  --color-secondary-grey-60: var(--grey-60);
+  --color-secondary-notification-grey: var(--grey-notif);
+
+  /* ===== Tertiary ===== */
+  --color-tertiary-background-red: var(--tint-red-50);
+  --color-tertiary-light-pink: var(--tint-red-100);
+
+  /* ===== Status ===== */
+  --color-system-active: var(--status-active);
+  --color-system-complete: var(--status-success);
+  --color-system-error: var(--status-error);
+
+  --color-status-success-subtle: var(--tint-green-50);
+  --color-status-processing-subtle: var(--tint-orange-100);
+  --color-status-error-subtle: var(--tint-red-50);
+  --color-status-reject-subtle: var(--tint-yellow-50);
+
+  /* ===== Typography ===== */
+  --text-medium-b: 16px;
+  --text-medium-b--line-height: 22px;
+  --text-medium-b--letter-spacing: 1%;
+  --text-medium-b--font-weight: 700;
+
+  --text-large-b: 18px;
+  --text-large-b--line-height: 24px;
+  --text-large-b--letter-spacing: 1%;
+  --text-large-b--font-weight: 700;
+
+  --text-small-r: 14px;
+  --text-small-r--line-height: 20px;
+  --text-small-r--letter-spacing: 1%;
+  --text-small-r--font-weight: 400;
+
+  --text-medium-r: 16px;
+  --text-medium-r--line-height: 22px;
+  --text-medium-r--letter-spacing: 1%;
+  --text-medium-r--font-weight: 400;
+
+  --text-3-r: 20px;
+  --text-3-r--line-height: 30px;
+  --text-3-r--letter-spacing: 0%;
+  --text-3-r--font-weight: 400;
+
+  --text-large-r: 18px;
+  --text-large-r--line-height: 24px;
+  --text-large-r--letter-spacing: 1%;
+  --text-large-r--font-weight: 400;
+
+  --text-2b: 24px;
+  --text-2b--line-height: 34px;
+  --text-2b--letter-spacing: 0%;
+
+  --text-3b: 20px;
+  --text-3b--line-height: 30px;
+  --text-3b--letter-spacing: 0%;
+  --text-3b--font-weight: 700;
+
+  --text-xxs-r: 12px;
+  --text-xxs-r--line-height: 16px;
+  --text-xxs-r--letter-spacing: 1%;
+  --text-xxs-r--font-weight: 400;
+
+  /* ===== Elevation shadows ===== */
+  --shadow-light-shadow: 0px 2px 10px 0px var(--shadow-near-black);
+  --shadow-blur: 0px 10px 30px 0px var(--shadow-near-black);
+  --shadow-navbar: var(--shadow-navbar-primitive);
+}

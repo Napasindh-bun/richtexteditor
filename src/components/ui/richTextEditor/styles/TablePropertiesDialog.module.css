@@ -1,0 +1,42 @@
+@reference "../../../../app/globals.css";
+
+@layer components {
+  .stack {
+    @apply mt-4 flex flex-col gap-3 text-left;
+  }
+
+  .field {
+    @apply flex flex-col gap-1.5;
+  }
+
+  .label {
+    @apply text-sm font-medium text-text-primary;
+  }
+
+  .colorRow {
+    @apply flex items-center gap-2;
+  }
+
+  .colorSwatch {
+    @apply size-9 shrink-0 rounded-md border border-border-default;
+  }
+
+  .colorSwatchEmpty {
+    background-image:
+      linear-gradient(45deg, #d1d5db 25%, transparent 25%),
+      linear-gradient(-45deg, #d1d5db 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #d1d5db 75%),
+      linear-gradient(-45deg, transparent 75%, #d1d5db 75%);
+    background-size: 8px 8px;
+    background-position:
+      0 0,
+      0 4px,
+      4px -4px,
+      -4px 0;
+    background-color: #fff;
+  }
+
+  .colorInput {
+    @apply flex-1;
+  }
+}

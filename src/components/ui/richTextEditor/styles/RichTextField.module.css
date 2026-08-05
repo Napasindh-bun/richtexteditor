@@ -1,0 +1,28 @@
+@reference "../../../../app/globals.css";
+
+@layer components {
+  .root {
+    @apply flex flex-col;
+  }
+
+  .label {
+    @apply text-small-r font-semibold text-text-primary;
+  }
+
+  .preview {
+    @apply relative mt-2 h-18 w-full overflow-hidden rounded-md border border-border-default bg-surface-default px-3 py-1.5 text-left text-small-r text-text-primary hover:border-text-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-accent;
+  }
+
+  .previewClip {
+    @apply h-full overflow-hidden;
+  }
+
+  .previewTruncated .previewClip {
+    /* Leave room for the ellipsis row */
+    @apply pb-4;
+  }
+
+  .ellipsis {
+    @apply pointer-events-none absolute right-2 bottom-1 bg-surface-default pl-2 text-text-muted;
+  }
+}

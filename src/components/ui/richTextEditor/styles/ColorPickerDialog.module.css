@@ -1,0 +1,73 @@
+@reference "../../../../app/globals.css";
+
+@layer components {
+  .dialogLift {
+    z-index: 60;
+  }
+
+  .body {
+    @apply mt-4 text-left;
+  }
+
+  .pickerRow {
+    @apply flex items-stretch gap-3;
+  }
+
+  .svSquare {
+    @apply relative size-[180px] shrink-0 cursor-crosshair overflow-hidden rounded-md border-2 border-sky-500;
+    touch-action: none;
+  }
+
+  .svWhite {
+    @apply pointer-events-none absolute inset-0;
+    background: linear-gradient(to right, #fff, transparent);
+  }
+
+  .svBlack {
+    @apply pointer-events-none absolute inset-0;
+    background: linear-gradient(to top, #000, transparent);
+  }
+
+  .svThumb {
+    @apply pointer-events-none absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-500 bg-white shadow-sm;
+  }
+
+  .hueSlider {
+    @apply relative h-[180px] w-3 shrink-0 cursor-ns-resize rounded-sm;
+    touch-action: none;
+    background: linear-gradient(
+      to top,
+      #ff0000 0%,
+      #ffff00 17%,
+      #00ff00 33%,
+      #00ffff 50%,
+      #0000ff 67%,
+      #ff00ff 83%,
+      #ff0000 100%
+    );
+  }
+
+  .hueThumb {
+    @apply pointer-events-none absolute left-1/2 h-1.5 w-4 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-black bg-white;
+  }
+
+  .values {
+    @apply flex min-w-[7.5rem] flex-1 flex-col gap-2;
+  }
+
+  .channel {
+    @apply flex items-center gap-2;
+  }
+
+  .channelLabel {
+    @apply w-4 shrink-0 text-sm font-medium text-text-primary;
+  }
+
+  .channelInput {
+    @apply h-8;
+  }
+
+  .preview {
+    @apply mt-auto h-14 w-full rounded-md border border-border-default;
+  }
+}

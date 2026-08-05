@@ -1,0 +1,85 @@
+@reference "../../../app/globals.css";
+
+@layer components {
+  .srOnly {
+    @apply sr-only;
+  }
+
+  .overlay {
+    @apply fixed inset-0 z-50 bg-authoring-modal-scrim backdrop-blur-[8px];
+    @apply data-[state=open]:animate-in data-[state=open]:fade-in-0;
+    @apply data-[state=closed]:animate-out data-[state=closed]:fade-out-0;
+    @apply duration-200;
+  }
+
+  .dialog {
+    @apply fixed top-1/2 left-1/2 z-50 h-fit max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border-0 bg-transparent p-0 shadow-none outline-none;
+    @apply data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-4;
+    @apply data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-bottom-4;
+    @apply duration-200;
+  }
+
+  .sizeSm {
+    @apply max-w-[400px];
+  }
+
+  .sizeMd {
+    @apply max-w-[540px];
+  }
+
+  .sizeLg {
+    @apply max-w-[560px];
+  }
+
+  .card {
+    @apply w-full rounded-2xl bg-surface-muted p-6 text-center shadow-light-shadow;
+  }
+
+  .icon {
+    @apply mx-auto mb-4 flex size-[52px] items-center justify-center;
+  }
+
+  .alertIcon {
+    @apply size-[52px];
+  }
+
+  .title {
+    @apply text-left text-xl font-semibold text-text-primary;
+  }
+
+  .message {
+    @apply mt-3 text-center text-sm text-text-secondary;
+  }
+
+  .messageEmphasis {
+    @apply mt-3 text-center text-sm font-medium text-text-secondary;
+  }
+
+  .actions {
+    @apply mt-6 flex justify-center gap-3;
+  }
+
+  .cancelButton {
+    @apply h-10 min-w-[128px] rounded-[10px] border border-border-default bg-surface-default px-6 text-sm font-medium text-text-secondary hover:bg-surface-subtle;
+  }
+
+  .primaryButton {
+    @apply h-10 min-w-[128px] rounded-[10px] bg-primary-main px-6 text-sm font-medium text-text-inverse hover:bg-brand-hover disabled:bg-secondary-grey-40;
+  }
+
+  .destructiveButton {
+    @apply h-10 min-w-[128px] rounded-[10px] px-6 text-sm font-medium text-white;
+  }
+
+  .confirmButton {
+    @apply h-10 min-w-[128px] rounded-[10px] px-6 text-sm font-medium;
+  }
+
+  .cancelButtonLg {
+    @apply h-11 min-w-[148px] rounded-[10px] border border-border-default bg-surface-default px-8 text-base font-medium text-text-secondary hover:bg-surface-subtle;
+  }
+
+  .primaryButtonLg {
+    @apply h-11 min-w-[148px] rounded-[10px] bg-primary-main px-8 text-base font-medium text-text-inverse hover:bg-brand-hover disabled:bg-secondary-grey-40;
+  }
+}
