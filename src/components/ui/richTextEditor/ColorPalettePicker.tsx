@@ -138,7 +138,7 @@ export function ColorPalettePicker({
             <p className={styles.colorPickerTitle}>{label}</p>
 
             <div className={styles.colorSection}>
-              <p className={styles.colorSectionLabel}>สีพื้นฐาน</p>
+              <p className={styles.colorSectionLabel}>Basic colors</p>
               <div className={styles.colorGrid}>
                 {colors.map((color) => (
                   <ColorSwatchButton
@@ -164,7 +164,7 @@ export function ColorPalettePicker({
               }}
             >
               <Pipette />
-              เลือกสีเอง…
+              Custom color…
             </button>
 
             <button
@@ -176,7 +176,7 @@ export function ColorPalettePicker({
               }}
             >
               <Ban />
-              ล้างสี
+              Remove color
             </button>
           </div>
         )}

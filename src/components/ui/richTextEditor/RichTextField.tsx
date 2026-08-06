@@ -26,6 +26,8 @@ type RichTextFieldProps = Readonly<{
   className?: string
   labelClassName?: string
   previewClassName?: string
+  /** Forwarded to RichTextEditor — see its `onUploadVideo` prop. */
+  onUploadVideo?: (file: File) => Promise<string>
 }>
 
 /**
@@ -45,6 +47,7 @@ export function RichTextField({
   className,
   labelClassName,
   previewClassName,
+  onUploadVideo,
 }: RichTextFieldProps) {
   const emptyLabel = placeholder || label
   const hasContent = hasRichTextContent(value, plainText)
@@ -96,6 +99,7 @@ export function RichTextField({
         value={value}
         onClose={onCloseEditor}
         onSave={onSave}
+        onUploadVideo={onUploadVideo}
       />
     </div>
   )

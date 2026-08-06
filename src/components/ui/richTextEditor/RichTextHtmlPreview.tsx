@@ -5,6 +5,7 @@ import { useMemo } from 'react'
 import { cn } from '@libs'
 import { htmlWithRenderedMath } from '@utils/editor/richTextMath'
 
+import contentStyles from './styles/RichTextContent.module.css'
 import styles from './styles/RichTextHtmlPreview.module.css'
 
 type RichTextHtmlPreviewProps = Readonly<{
@@ -29,12 +30,16 @@ export function RichTextHtmlPreview({
   )
 
   if (!trimmed) {
-    return <div className={cn(styles.preview, className)}>{fallback || 'โจทย์'}</div>
+    return (
+      <div className={cn(styles.preview, styles.fallback, className)}>
+        {fallback || 'โจทย์'}
+      </div>
+    )
   }
 
   return (
     <div
-      className={cn(styles.preview, className)}
+      className={cn(contentStyles.content, styles.preview, className)}
       dangerouslySetInnerHTML={{ __html: renderedHtml }}
     />
   )

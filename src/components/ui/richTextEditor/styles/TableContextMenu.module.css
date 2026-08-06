@@ -6,14 +6,6 @@
     @apply pointer-events-auto fixed z-[200];
   }
 
-  .trigger {
-    @apply inline-flex size-7 items-center justify-center rounded bg-white text-neutral-600 opacity-90 shadow-sm ring-1 ring-black/10 transition hover:bg-neutral-50 hover:text-neutral-950 hover:opacity-100;
-  }
-
-  .triggerIcon {
-    @apply size-4;
-  }
-
   .menu {
     @apply absolute left-0 z-[201] mt-1 min-w-[15rem] overflow-y-auto overscroll-contain rounded-md border border-border-default bg-surface-default py-1 shadow-md;
     max-height: min(24rem, calc(100dvh - 1rem));

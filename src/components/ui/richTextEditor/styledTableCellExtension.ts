@@ -1,7 +1,16 @@
-import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table'
-import type { Editor } from '@tiptap/core'
-import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
+import {
+  createColGroup,
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow,
+  TableView,
+} from '@tiptap/extension-table'
+import { mergeAttributes, type Editor } from '@tiptap/core'
+import type { DOMOutputSpec, Node as ProseMirrorNode } from '@tiptap/pm/model'
+import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { columnResizingPluginKey, TableMap } from '@tiptap/pm/tables'
+import type { EditorView } from '@tiptap/pm/view'
 
 import {
   DEFAULT_TABLE_PROPERTIES,
@@ -39,6 +48,11 @@ function withUnit(value: string, fallbackUnit = 'px'): string {
   return trimmed
 }
 
+/** `none` / `hidden` must not fall back to the legacy `border="1"` presentational attr. */
+function isBorderless(borderStyle: unknown): boolean {
+  return borderStyle === 'none' || borderStyle === 'hidden'
+}
+
 const tableStyleAttributes = {
   width: {
     default: null as string | null,
@@ -48,7 +62,7 @@ const tableStyleAttributes = {
       if (!attributes.width) return {}
       return {
         width: attributes.width,
-        style: `width: ${attributes.width}`,
+        style: `width: ${withUnit(attributes.width)}`,
       }
     },
   },
@@ -60,7 +74,7 @@ const tableStyleAttributes = {
       if (!attributes.height) return {}
       return {
         height: attributes.height,
-        style: `height: ${attributes.height}`,
+        style: `height: ${withUnit(attributes.height)}`,
       }
     },
   },
@@ -99,10 +113,11 @@ const tableStyleAttributes = {
     parseHTML: (element: HTMLElement) =>
       element.getAttribute('border')?.trim() ||
       parseDataOrStyle(element, 'data-border-width', 'borderWidth'),
-    renderHTML: (attributes: { borderWidth?: string | null }) => {
+    renderHTML: (attributes: { borderWidth?: string | null; borderStyle?: string | null }) => {
       if (!attributes.borderWidth) return {}
       return {
-        border: attributes.borderWidth,
+        // Legacy `border` attr would draw 1px lines even when the style is none.
+        ...(isBorderless(attributes.borderStyle) ? {} : { border: attributes.borderWidth }),
         'data-border-width': attributes.borderWidth,
         style: `--rte-border-width: ${withUnit(attributes.borderWidth)}`,
       }
@@ -283,6 +298,131 @@ const cellStyleAttributes = {
   },
 }
 
+function setStyleProperty(table: HTMLTableElement, name: string, value: string | null) {
+  if (value) table.style.setProperty(name, value)
+  else table.style.removeProperty(name)
+}
+
+function setDataAttribute(table: HTMLTableElement, name: string, value: string | null) {
+  if (value) table.setAttribute(name, value)
+  else table.removeAttribute(name)
+}
+
+function asTrimmedString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null
+}
+
+/**
+ * With `resizable: true`, TipTap's Table bows out of `addNodeView()` and
+ * prosemirror-tables' `columnResizing` plugin registers `TableView` itself —
+ * without passing TipTap's rendered HTMLAttributes. That is why none of the
+ * table attributes (border, fill, alignment…) ever showed up inside the editor:
+ * they only existed in `getHTML()` output. Write them onto the live `<table>`.
+ */
+function applyTableAttrsToDom(table: HTMLTableElement, node: ProseMirrorNode) {
+  const attrs = node.attrs as Record<string, unknown>
+  const borderStyle = asTrimmedString(attrs.borderStyle)
+  const borderWidth = asTrimmedString(attrs.borderWidth)
+  const borderColor = asTrimmedString(attrs.borderColor)
+  const cellPadding = asTrimmedString(attrs.cellPadding)
+  const cellSpacing = asTrimmedString(attrs.cellSpacing)
+  const backgroundColor = asTrimmedString(attrs.backgroundColor)
+  const alignment = asTrimmedString(attrs.alignment)
+  const width = asTrimmedString(attrs.width)
+  const height = asTrimmedString(attrs.height)
+
+  // Custom properties the stylesheet reads to draw td/th borders and padding.
+  setStyleProperty(table, '--rte-border-width', borderWidth ? withUnit(borderWidth) : null)
+  setStyleProperty(table, '--rte-border-style', borderStyle)
+  setStyleProperty(table, '--rte-border-color', borderColor)
+  setStyleProperty(table, '--rte-cell-padding', cellPadding ? withUnit(cellPadding) : null)
+
+  setStyleProperty(table, 'background-color', backgroundColor)
+  setStyleProperty(table, 'border-spacing', cellSpacing ? withUnit(cellSpacing) : null)
+  setStyleProperty(table, 'border-collapse', cellSpacing ? 'separate' : null)
+  setStyleProperty(table, 'height', height ? withUnit(height) : null)
+  // `updateColumns` owns width/min-width — only override when the author set one.
+  if (width) {
+    table.style.setProperty('width', withUnit(width))
+    table.style.removeProperty('min-width')
+  }
+
+  setDataAttribute(table, 'data-border-style', borderStyle)
+  setDataAttribute(table, 'data-border-width', borderWidth)
+  setDataAttribute(table, 'data-border-color', borderColor)
+  setDataAttribute(table, 'data-background-color', backgroundColor)
+  setDataAttribute(table, 'data-cell-padding', cellPadding)
+  setDataAttribute(table, 'data-align', alignment && alignment !== 'none' ? alignment : null)
+  setDataAttribute(table, 'data-show-caption', attrs.showCaption ? 'true' : null)
+}
+
+/** TableView that keeps the live `<table>` in sync with the node attributes. */
+export class StyledTableView extends TableView {
+  constructor(node: ProseMirrorNode, cellMinWidth: number, view?: EditorView) {
+    super(node, cellMinWidth, view)
+    applyTableAttrsToDom(this.table, node)
+  }
+
+  override update(node: ProseMirrorNode): boolean {
+    const updated = super.update(node)
+    // After super so our width wins over `updateColumns`.
+    if (updated) applyTableAttrsToDom(this.table, node)
+    return updated
+  }
+}
+
+const CELL_TYPES = new Set(['tableCell', 'tableHeader'])
+const borderSyncPluginKey = new PluginKey('styledTableBorderSync')
+
+/**
+ * Cells created after Table Properties was applied (add row/column, split,
+ * paste) carry no border attributes and fall back to the stylesheet default,
+ * leaving one table with mixed borders. Re-stamp them from their table.
+ */
+function syncCellBordersPlugin() {
+  return new Plugin({
+    key: borderSyncPluginKey,
+    appendTransaction: (transactions, _oldState, newState) => {
+      if (!transactions.some((transaction) => transaction.docChanged)) return null
+
+      let tr = newState.tr
+      let changed = false
+
+      newState.doc.descendants((node, pos) => {
+        // Only block content can hold a table — never walk into text/marks.
+        if (node.type.name !== 'table') return node.isBlock
+
+        const border = {
+          borderColor: node.attrs.borderColor ?? null,
+          borderWidth: node.attrs.borderWidth ?? null,
+          borderStyle: node.attrs.borderStyle ?? null,
+        }
+        if (!border.borderColor && !border.borderWidth && !border.borderStyle) return false
+
+        node.descendants((child, offset) => {
+          if (child.type.name === 'tableRow') return true
+          if (!CELL_TYPES.has(child.type.name)) return false
+          if (
+            child.attrs.borderColor === border.borderColor &&
+            child.attrs.borderWidth === border.borderWidth &&
+            child.attrs.borderStyle === border.borderStyle
+          ) {
+            return false
+          }
+
+          tr = tr.setNodeMarkup(pos + 1 + offset, undefined, { ...child.attrs, ...border })
+          changed = true
+          return false
+        })
+
+        return false
+      })
+
+      return changed ? tr : null
+    },
+  })
+}
+
 /** Table node with TinyMCE-style layout / border / fill attributes. */
 export const StyledTable = Table.extend({
   addAttributes() {
@@ -290,6 +430,46 @@ export const StyledTable = Table.extend({
       ...this.parent?.(),
       ...tableStyleAttributes,
     }
+  },
+
+  addProseMirrorPlugins() {
+    return [...(this.parent?.() ?? []), syncCellBordersPlugin()]
+  },
+
+  /**
+   * Same output as TipTap's, minus one bug: upstream returns the table's own
+   * `style` *instead of* the computed `width` / `min-width` whenever any
+   * attribute contributes a style — which is every table that has been through
+   * Table Properties. The export then carried no table width at all and the
+   * preview fell back to the stylesheet, so the same document showed a
+   * different table than the editor did. Merge both instead, layout first so an
+   * author-set width still wins.
+   */
+  renderHTML({ node, HTMLAttributes }) {
+    const { colgroup, tableWidth, tableMinWidth } = createColGroup(
+      node,
+      this.options.cellMinWidth,
+    )
+    const layoutStyle = tableWidth
+      ? `width: ${tableWidth}`
+      : tableMinWidth
+        ? `min-width: ${tableMinWidth}`
+        : ''
+
+    const table = [
+      'table',
+      mergeAttributes(
+        layoutStyle ? { style: layoutStyle } : {},
+        this.options.HTMLAttributes,
+        HTMLAttributes,
+      ),
+      ...(colgroup ? [colgroup] : []),
+      ['tbody', 0],
+    ] as DOMOutputSpec
+
+    return this.options.renderWrapper
+      ? (['div', { class: 'tableWrapper' }, table] as DOMOutputSpec)
+      : table
   },
 })
 

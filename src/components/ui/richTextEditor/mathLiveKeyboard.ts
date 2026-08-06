@@ -25,6 +25,10 @@ export function isMathLiveKeyboardEvent(event: DismissOutsideEvent): boolean {
   )
 }
 
+/** Editor surfaces that live outside the dialog's DOM subtree. */
+const RICH_TEXT_PORTAL_SELECTOR =
+  '[data-table-cell-menu], [data-table-row-resize-handle], [data-rte-fullscreen]'
+
 export function isTablePortalEvent(event: DismissOutsideEvent): boolean {
   const original = event.detail?.originalEvent
   const path =
@@ -35,11 +39,7 @@ export function isTablePortalEvent(event: DismissOutsideEvent): boolean {
         : []
 
   return path.some(
-    (node) =>
-      node instanceof Element &&
-      Boolean(
-        node.closest('[data-table-cell-menu], [data-table-row-resize-handle]'),
-      ),
+    (node) => node instanceof Element && Boolean(node.closest(RICH_TEXT_PORTAL_SELECTOR)),
   )
 }
 

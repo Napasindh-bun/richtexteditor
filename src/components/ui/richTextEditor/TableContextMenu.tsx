@@ -9,13 +9,14 @@ import {
   type RefObject,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { TextSelection } from '@tiptap/pm/state'
+import { CellSelection } from '@tiptap/pm/tables'
 import type { Editor } from '@tiptap/react'
 import {
   BetweenHorizonalEnd,
   BetweenHorizonalStart,
   BetweenVerticalEnd,
   BetweenVerticalStart,
-  ChevronDown,
   Columns2,
   Combine,
   Heading,
@@ -34,7 +35,6 @@ import { HIGHLIGHT_COLORS } from './ColorPalettePicker'
 import { ColorPickerDialog } from './ColorPickerDialog'
 import styles from './styles/TableContextMenu.module.css'
 
-const TRIGGER_SIZE = 28
 /** One-row presets (+ clear + custom picker fill the row). */
 const CELL_BG_PRESETS = HIGHLIGHT_COLORS.slice(0, 6)
 
@@ -45,40 +45,12 @@ type TableContextMenuProps = Readonly<{
   onTableProperties: () => void
 }>
 
-type CellPosition = Readonly<{
+type MenuPosition = Readonly<{
   top: number
   left: number
 }>
 
-function getSelectedCellElement(editor: Editor): HTMLElement | null {
-  if (!editor.isActive('tableCell') && !editor.isActive('tableHeader')) return null
-
-  const { view, state } = editor
-  const { $from } = state.selection
-
-  for (let depth = $from.depth; depth > 0; depth -= 1) {
-    const node = $from.node(depth)
-    if (node.type.name !== 'tableCell' && node.type.name !== 'tableHeader') continue
-    const pos = $from.before(depth)
-    const dom = view.nodeDOM(pos)
-    if (dom instanceof HTMLElement) return dom
-  }
-
-  return null
-}
-
 /** Viewport (fixed) coords for the cell action trigger — escapes Dialog overflow. */
-function resolveCellPosition(editor: Editor): CellPosition | null {
-  const cell = getSelectedCellElement(editor)
-  if (!cell || !editor.view.dom.contains(cell)) return null
-
-  const rect = cell.getBoundingClientRect()
-  return {
-    top: rect.top + (rect.height - TRIGGER_SIZE) / 2,
-    left: rect.right - TRIGGER_SIZE - 4,
-  }
-}
-
 function MenuItem({
   label,
   icon,
@@ -123,28 +95,57 @@ export function TableContextMenu({
   onTableProperties,
 }: TableContextMenuProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null)
   const [colorPickerOpen, setColorPickerOpen] = useState(false)
-  /** Bumps on scroll/resize so fixed trigger position recalculates. */
-  const [layoutTick, setLayoutTick] = useState(0)
 
   useEffect(() => {
-    const bumpLayout = (event?: Event) => {
-      const target = event?.target
-      if (target instanceof Element && target.closest('[data-table-cell-menu]')) return
-      setLayoutTick((tick) => tick + 1)
+    const handleContextMenu = (event: MouseEvent) => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+
+      const cell = target.closest('td, th')
+      if (!(cell instanceof HTMLTableCellElement) || !editor.view.dom.contains(cell)) return
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      const selection = editor.state.selection
+      const keepCellSelection =
+        selection instanceof CellSelection && cell.classList.contains('selectedCell')
+
+      if (!keepCellSelection) {
+        const position = editor.view.posAtDOM(cell, 0)
+        const resolved = editor.state.doc.resolve(
+          Math.max(0, Math.min(position, editor.state.doc.content.size)),
+        )
+        editor.view.dispatch(editor.state.tr.setSelection(TextSelection.near(resolved, 1)))
+      }
+      editor.view.focus()
+
+      const menuWidth = 240
+      const viewportPadding = 8
+      setMenuPosition({
+        top: event.clientY,
+        left: Math.min(
+          event.clientX,
+          Math.max(viewportPadding, window.innerWidth - menuWidth - viewportPadding),
+        ),
+      })
+      setMenuOpen(true)
     }
 
     const scrollRoot = containerRef.current?.querySelector('[data-rte-scroll]')
-    scrollRoot?.addEventListener('scroll', bumpLayout, { passive: true })
-    window.addEventListener('resize', bumpLayout)
-    window.addEventListener('scroll', bumpLayout, true)
+    const closeMenu = () => setMenuOpen(false)
+    editor.view.dom.addEventListener('contextmenu', handleContextMenu)
+    scrollRoot?.addEventListener('scroll', closeMenu, { passive: true })
+    window.addEventListener('resize', closeMenu)
 
     return () => {
-      scrollRoot?.removeEventListener('scroll', bumpLayout)
-      window.removeEventListener('resize', bumpLayout)
-      window.removeEventListener('scroll', bumpLayout, true)
+      editor.view.dom.removeEventListener('contextmenu', handleContextMenu)
+      scrollRoot?.removeEventListener('scroll', closeMenu)
+      window.removeEventListener('resize', closeMenu)
     }
-  }, [containerRef])
+  }, [containerRef, editor])
 
   useEffect(() => {
     if (!menuOpen) return
@@ -208,17 +209,14 @@ export function TableContextMenu({
 
   if (typeof document === 'undefined') return null
 
-  const cellPos = resolveCellPosition(editor)
-  // layoutTick forces re-read after scroll/resize (parent also re-renders on transactions).
-  void layoutTick
-  const menuVisible = Boolean(cellPos) && menuOpen
+  const menuVisible = Boolean(menuPosition) && menuOpen
 
   const spaceBelow =
-    cellPos && typeof window !== 'undefined'
-      ? window.innerHeight - (cellPos.top + TRIGGER_SIZE) - 8
+    menuPosition && typeof window !== 'undefined'
+      ? window.innerHeight - menuPosition.top - 8
       : 320
   const spaceAbove =
-    cellPos && typeof window !== 'undefined' ? cellPos.top - 8 : 320
+    menuPosition && typeof window !== 'undefined' ? menuPosition.top - 8 : 320
   const openUp = spaceBelow < 220 && spaceAbove > spaceBelow
   const menuMaxHeight = Math.max(
     140,
@@ -230,28 +228,13 @@ export function TableContextMenu({
 
   return (
     <>
-      {cellPos && !colorPickerOpen
+      {menuPosition && menuVisible && !colorPickerOpen
         ? createPortal(
             <div
               data-table-cell-menu
               className={styles.root}
-              style={{ top: cellPos.top, left: cellPos.left }}
+              style={{ top: menuPosition.top, left: menuPosition.left }}
             >
-              <button
-                type="button"
-                className={styles.trigger}
-                aria-label="Table cell actions"
-                aria-expanded={menuVisible}
-                aria-haspopup="menu"
-                onPointerDown={(event: ReactPointerEvent<HTMLButtonElement>) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  setMenuOpen((open) => !open)
-                }}
-              >
-                <ChevronDown className={styles.triggerIcon} />
-              </button>
-
               {menuVisible ? (
                 <div
                   className={cn(styles.menu, openUp && styles.menuOpenUp)}

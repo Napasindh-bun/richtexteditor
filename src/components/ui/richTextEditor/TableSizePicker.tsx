@@ -23,7 +23,7 @@ export function TableSizePicker({ disabled, onSelect }: TableSizePickerProps) {
   return (
     <IconDropdownMenu
       trigger={<Table />}
-      triggerLabel="ตาราง"
+      triggerLabel="Table"
       wrapperClassName={styles.tablePickerWrap}
       triggerClassName={cn(styles.toolbarButton, disabled && styles.toolbarButtonDisabled)}
       contentClassName={styles.tablePicker}
@@ -55,7 +55,7 @@ export function TableSizePicker({ disabled, onSelect }: TableSizePickerProps) {
           <p className={styles.tablePickerLabel}>
             {hovered.rows > 0 && hovered.cols > 0
               ? `${hovered.rows} × ${hovered.cols}`
-              : 'เลือกขนาดตาราง'}
+              : 'Table size'}
           </p>
         </div>
       )}

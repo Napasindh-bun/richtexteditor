@@ -17,7 +17,11 @@ import {
 } from '../select'
 
 import { ColorPickerDialog } from './ColorPickerDialog'
-import { TABLE_BORDER_STYLES, type TablePropertiesValues } from './tableProperties'
+import {
+  borderWidthForStyle,
+  TABLE_BORDER_STYLES,
+  type TablePropertiesValues,
+} from './tableProperties'
 import styles from './styles/TablePropertiesDialog.module.css'
 
 type TablePropertiesDialogProps = Readonly<{
@@ -134,7 +138,14 @@ function TablePropertiesForm({
             <Label className={styles.label}>Border style</Label>
             <Select
               value={values.borderStyle || 'solid'}
-              onValueChange={(next) => patch('borderStyle', next)}
+              onValueChange={(next) =>
+                setValues((prev) => ({
+                  ...prev,
+                  borderStyle: next,
+                  // double/groove/ridge/inset/outset render as solid when too thin.
+                  borderWidth: borderWidthForStyle(next, prev.borderWidth),
+                }))
+              }
             >
               <SelectTrigger aria-label="Border style">
                 <SelectValue placeholder="Select..." />

@@ -12,11 +12,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
       "@libs": ["./src/libs/clsx/index.ts"],
       "@utils/*": ["./src/utils/*"]
     }
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "playground", "vite.config.ts"]
 }

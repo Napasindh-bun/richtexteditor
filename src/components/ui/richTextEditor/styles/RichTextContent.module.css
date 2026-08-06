@@ -1,0 +1,199 @@
+@reference "../../../../app/globals.css";
+
+/*
+ * Single source of truth for how stored rich-text HTML renders.
+ *
+ * Both the ProseMirror surface and the read-only preview carry `.content`, so a
+ * document lays out identically on either — same font metrics, same block
+ * spacing, same table geometry. Anything that only exists while editing
+ * (resize handles, cell selection, caret affordances) belongs in
+ * RichTextEditor.module.css, not here; anything that only frames the preview
+ * belongs in RichTextHtmlPreview.module.css.
+ *
+ * Values are the editor's, because the editor is what the author sees while
+ * writing — the preview follows it, never the other way round.
+ */
+@layer components {
+  .content {
+    font-family: Arial, 'Sarabun', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: normal;
+    color: #333;
+    text-align: left;
+  }
+
+  .content :global(p) {
+    margin: 0.5em 0;
+    font-weight: 400;
+  }
+
+  .content :global(ul) {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+    list-style: disc;
+  }
+
+  .content :global(ol) {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+    list-style: decimal;
+  }
+
+  .content :global(a) {
+    color: #2d70a4;
+    text-decoration: underline;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+
+  .content :global(mark) {
+    border-radius: 0;
+    padding: 0 1px;
+  }
+
+  .content :global([data-double-underline]) {
+    text-decoration-line: underline;
+    text-decoration-style: double;
+  }
+
+  /* ── Media ───────────────────────────────────────────────── */
+  .content :global(img) {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0.25em 0;
+  }
+
+  .content :global(img[data-align='left']) {
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .content :global(img[data-align='center']) {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .content :global(img[data-align='right']) {
+    margin-left: auto;
+    margin-right: 0;
+  }
+
+  .content :global(video),
+  .content :global(iframe) {
+    display: block;
+    max-width: 100%;
+    margin: 0.25em 0;
+    border: 0;
+    background: #000;
+  }
+
+  .content :global(iframe) {
+    aspect-ratio: 16 / 9;
+    height: auto;
+  }
+
+  .content :global(video[data-align='left']),
+  .content :global(iframe[data-align='left']) {
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .content :global(video[data-align='center']),
+  .content :global(iframe[data-align='center']) {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .content :global(video[data-align='right']),
+  .content :global(iframe[data-align='right']) {
+    margin-left: auto;
+    margin-right: 0;
+  }
+
+  /* ── Tables ──────────────────────────────────────────────── */
+  .content :global(.tableWrapper) {
+    width: 100%;
+    max-width: 100%;
+    margin: 0.5em 0;
+    overflow-x: auto;
+  }
+
+  .content :global(table) {
+    margin: 0;
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+    --rte-border-width: 1px;
+    --rte-border-style: solid;
+    --rte-border-color: #ccc;
+    --rte-cell-padding: 0.4rem;
+  }
+
+  .content :global(table[data-align='left']) {
+    float: left;
+  }
+
+  .content :global(table[data-align='right']) {
+    float: right;
+  }
+
+  .content :global(table[data-align='center']) {
+    margin-left: auto;
+    margin-right: auto;
+    float: none;
+  }
+
+  .content :global(table[data-show-caption='true']::before) {
+    content: 'Caption';
+    display: table-caption;
+    caption-side: top;
+    padding: 4px 0;
+    text-align: center;
+    font-size: 12px;
+    color: #5c5f66;
+  }
+
+  .content :global(td),
+  .content :global(th) {
+    border-width: var(--rte-border-width);
+    border-style: var(--rte-border-style);
+    border-color: var(--rte-border-color);
+    padding: var(--rte-cell-padding);
+    min-width: 0;
+    overflow-wrap: anywhere;
+    position: relative;
+  }
+
+  .content :global(th) {
+    background: #f0f0f0;
+    font-weight: 600;
+  }
+
+  /*
+   * Cell paragraphs keep the same margins as body paragraphs — collapsing the
+   * first/last one would make a row shorter in one surface than the other.
+   */
+  .content :global(td p),
+  .content :global(th p) {
+    margin: 0.5em 0;
+  }
+
+  /* ── Math ────────────────────────────────────────────────── */
+  .content :global(.katex) {
+    font-size: 0.95em;
+    line-height: normal;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+
+  .content :global(.katex-html),
+  .content :global(.katex .base) {
+    max-width: 100%;
+    overflow: hidden;
+  }
+}

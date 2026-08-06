@@ -8,6 +8,7 @@ This initial version keeps the existing editor behavior and styling. It is inten
 
 ```bash
 yarn install
+yarn dev        # playground at http://localhost:5173
 yarn typecheck
 yarn build
 ```

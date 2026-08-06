@@ -1,0 +1,73 @@
+@reference "../../../../app/globals.css";
+
+@layer components {
+  .wrapper {
+    @apply my-1 flex w-full;
+  }
+
+  .alignleft {
+    @apply justify-start;
+  }
+
+  .aligncenter {
+    @apply justify-center;
+  }
+
+  .alignright {
+    @apply justify-end;
+  }
+
+  .videoContainer {
+    @apply relative inline-block max-w-full;
+  }
+
+  .videoContainerSelected {
+    outline: 2px solid #38bdf8;
+    outline-offset: 0;
+  }
+
+  .video {
+    @apply block h-auto w-full max-w-full bg-black;
+  }
+
+  .embed {
+    @apply block w-full max-w-full border-0 bg-black;
+    aspect-ratio: 16 / 9;
+    height: auto;
+  }
+
+  /* Transparent click target over the embed so ProseMirror sees the click. */
+  .shield {
+    @apply absolute inset-0 block;
+    cursor: pointer;
+  }
+
+  .handle {
+    @apply absolute z-10 size-2.5 border border-white bg-sky-400 p-0;
+    touch-action: none;
+  }
+
+  .handleNw {
+    top: -5px;
+    left: -5px;
+    cursor: nwse-resize;
+  }
+
+  .handleNe {
+    top: -5px;
+    right: -5px;
+    cursor: nesw-resize;
+  }
+
+  .handleSw {
+    bottom: -5px;
+    left: -5px;
+    cursor: nesw-resize;
+  }
+
+  .handleSe {
+    right: -5px;
+    bottom: -5px;
+    cursor: nwse-resize;
+  }
+}
