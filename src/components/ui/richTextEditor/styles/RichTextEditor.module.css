@@ -460,6 +460,23 @@
     outline: none;
   }
 
+  /*
+   * TableView writes pixel-based width/min-width values inline while columns
+   * are resized. In fullscreen those values would leave the table at its
+   * previous editor width, so override only the rendered fullscreen surface.
+   * The document attributes remain untouched and are restored on exit.
+   */
+  .shellFullscreen .editorContent :global(.tableWrapper),
+  .shellFullscreen .editorContent :global(table) {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .shellFullscreen .editorContent :global(table) {
+    min-width: 100% !important;
+    width: 100% !important;
+  }
+
   .editorContent :global(.tiptap-mathematics-render--editable) {
     cursor: pointer;
   }

@@ -181,6 +181,16 @@
     margin: 0.5em 0;
   }
 
+  /*
+   * ProseMirror renders an editable empty paragraph with a trailing <br>, but
+   * getHTML() serializes it as <p></p>. Give that empty preview paragraph the
+   * same line box so newly inserted table rows keep identical heights.
+   */
+  .content :global(td p:empty::before),
+  .content :global(th p:empty::before) {
+    content: '\00a0';
+  }
+
   /* ── Math ────────────────────────────────────────────────── */
   .content :global(.katex) {
     font-size: 0.95em;

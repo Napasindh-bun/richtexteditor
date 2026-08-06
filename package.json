@@ -21,7 +21,6 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit"
   },
-
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18"
