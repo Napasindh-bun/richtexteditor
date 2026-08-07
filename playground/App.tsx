@@ -7,12 +7,17 @@ import {
 } from '../src/index'
 
 const SAMPLE_HTML =
-  '<p>Try editing this text — use the menubar and toolbar like TinyMCE: <strong>bold</strong>, <em>italic</em>, lists, tables, images, video, source code, fullscreen, and math.</p>'
+  '<p>Try editing this text — use the toolbar for <strong>bold</strong>, <em>italic</em>, lists, tables, images, audio, video, source code, fullscreen, and math.</p>'
 
 /** Stands in for a real upload so the URL path can be exercised without a backend. */
 async function fakeUploadVideo(file: File) {
   console.log('onUploadVideo called with', file.name, file.type, file.size)
   return 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
+}
+
+async function fakeUploadAudio(file: File) {
+  console.log('onUploadAudio called with', file.name, file.type, file.size)
+  return 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3'
 }
 
 export function App() {
@@ -51,6 +56,7 @@ export function App() {
             setIsFieldEditorOpen(false)
           }}
           onUploadVideo={fakeUploadVideo}
+          onUploadAudio={fakeUploadAudio}
         />
       </section>
 

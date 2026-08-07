@@ -17,6 +17,8 @@ type RichTextEditorModalProps = Readonly<{
   onSave: (html: string) => void
   /** Forwarded to RichTextEditor — see its `onUploadVideo` prop. */
   onUploadVideo?: (file: File) => Promise<string>
+  /** Forwarded to RichTextEditor — see its `onUploadAudio` prop. */
+  onUploadAudio?: (file: File) => Promise<string>
 }>
 
 export function RichTextEditorModal({
@@ -26,6 +28,7 @@ export function RichTextEditorModal({
   onClose,
   onSave,
   onUploadVideo,
+  onUploadAudio,
 }: RichTextEditorModalProps) {
   return (
     <Dialog
@@ -46,6 +49,7 @@ export function RichTextEditorModal({
         onClose={onClose}
         onSave={onSave}
         onUploadVideo={onUploadVideo}
+        onUploadAudio={onUploadAudio}
       />
     </Dialog>
   )
@@ -56,13 +60,19 @@ function RichTextEditorModalBody({
   onClose,
   onSave,
   onUploadVideo,
-}: Readonly<Pick<RichTextEditorModalProps, 'value' | 'onClose' | 'onSave' | 'onUploadVideo'>>) {
+  onUploadAudio,
+}: Readonly<Pick<RichTextEditorModalProps, 'value' | 'onClose' | 'onSave' | 'onUploadVideo' | 'onUploadAudio'>>) {
   const [draft, setDraft] = useState(value)
 
   return (
     <>
       <div className={styles.editorShell}>
-        <RichTextEditor value={draft} onChange={setDraft} onUploadVideo={onUploadVideo} />
+        <RichTextEditor
+          value={draft}
+          onChange={setDraft}
+          onUploadVideo={onUploadVideo}
+          onUploadAudio={onUploadAudio}
+        />
       </div>
       <div className={styles.actions}>
         <Button type="button" variant="outline" onClick={onClose} className={dialogStyles.cancelButton}>

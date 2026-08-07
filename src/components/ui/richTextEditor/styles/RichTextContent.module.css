@@ -135,6 +135,19 @@
     background: #000;
   }
 
+  .content :global(audio) {
+    display: block;
+    width: min(100%, 32rem);
+    max-width: 100%;
+    margin: 0.5em 0;
+  }
+
+  .content :global(audio.ProseMirror-selectednode) {
+    border-radius: 999px;
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
+  }
+
   .content :global(iframe) {
     aspect-ratio: 16 / 9;
     height: auto;

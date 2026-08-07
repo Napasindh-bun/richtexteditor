@@ -38,6 +38,7 @@ import {
   ListOrdered,
   Maximize2,
   Minimize2,
+  Volume2,
   PenLine,
   Redo2,
   Sigma,
@@ -51,6 +52,7 @@ import { resolveMathVariant } from '@utils/editor/richTextMath'
 
 import { IconDropdownMenu } from '../IconDropdownMenu'
 
+import { AudioDialog } from './AudioDialog'
 import {
   ColorPalettePicker,
   HIGHLIGHT_COLORS,
@@ -61,6 +63,7 @@ import { LinkDialog } from './LinkDialog'
 import { LineHeight } from './lineHeightExtension'
 import { MathLiveDialog, type MathLiveDialogVariant } from './MathLiveDialog'
 import { PreviewDialog } from './PreviewDialog'
+import { RichTextAudio } from './richTextAudioExtension'
 import { RichTextImage } from './richTextImageExtension'
 import { parseVideoSource, RichTextVideo } from './richTextVideoExtension'
 import { SourceCodeDialog } from './SourceCodeDialog'
@@ -95,6 +98,8 @@ type RichTextEditorProps = Readonly<{
    * inlined as a data URL, which bloats the stored HTML for anything but clips.
    */
   onUploadVideo?: (file: File) => Promise<string>
+  /** Upload a picked audio file and resolve to its public URL. */
+  onUploadAudio?: (file: File) => Promise<string>
 }>
 
 type ToolbarButtonProps = Readonly<{
@@ -155,6 +160,7 @@ const NODE_PATH_LABELS: Record<string, string> = {
   tableHeader: 'th',
   image: 'img',
   video: 'video',
+  audio: 'audio',
   inlineMath: 'math',
   blockMath: 'math',
   hardBreak: 'br',
@@ -187,6 +193,7 @@ type MenuBarProps = Readonly<{
   isFullscreen: boolean
   onInsertImage: () => void
   onInsertVideo: () => void
+  onInsertAudio: () => void
   onOpenLink: () => void
   onInsertTable: () => void
   onOpenTableProperties: () => void
@@ -202,6 +209,7 @@ function MenuBar({
   isFullscreen,
   onInsertImage,
   onInsertVideo,
+  onInsertAudio,
   onOpenLink,
   onInsertTable,
   onOpenTableProperties,
@@ -268,6 +276,7 @@ function MenuBar({
       items: [
         { label: 'Image…', onClick: onInsertImage },
         { label: 'Video…', onClick: onInsertVideo },
+        { label: 'Audio…', onClick: onInsertAudio },
         { label: 'Link…', onClick: onOpenLink },
         { label: 'Table…', onClick: onInsertTable },
         { type: 'separator' as const },
@@ -492,10 +501,12 @@ export function RichTextEditor({
   onChange,
   height = 420,
   onUploadVideo,
+  onUploadAudio,
 }: RichTextEditorProps) {
   const shellRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
+  const audioInputRef = useRef<HTMLInputElement>(null)
   const [formulaDialog, setFormulaDialog] = useState<FormulaDialogState | null>(null)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
   const [linkInitialUrl, setLinkInitialUrl] = useState('')
@@ -506,6 +517,7 @@ export function RichTextEditor({
   const [sourceCodeOpen, setSourceCodeOpen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [videoDialogOpen, setVideoDialogOpen] = useState(false)
+  const [audioDialogOpen, setAudioDialogOpen] = useState(false)
   const linkSelectionRef = useRef<{ from: number; to: number; wasLink: boolean } | null>(null)
   const openFormulaEditorRef = useRef<(state: FormulaDialogState) => void>(() => {})
 
@@ -537,6 +549,7 @@ export function RichTextEditor({
       // characters and the caret can continue immediately after them.
       RichTextImage.configure({ allowBase64: true, inline: true }),
       RichTextVideo,
+      RichTextAudio,
       // TipTap built-in column resize (prosemirror-tables columnResizing).
       // `View` is forwarded to columnResizing — the only way table attributes
       // reach the editor DOM while resizing is on.
@@ -642,6 +655,7 @@ export function RichTextEditor({
     sourceCodeOpen ||
     previewOpen ||
     videoDialogOpen ||
+    audioDialogOpen ||
     formulaDialog !== null
 
   // Ctrl+Shift+F toggles, Esc leaves — matches TinyMCE's fullscreen plugin.
@@ -838,6 +852,30 @@ export function RichTextEditor({
       return
     }
     chain.setFontSize(`${nextPx}px`).run()
+  }
+
+  const insertAudio = (src: string) => {
+    editor?.chain().focus().insertContent({ type: 'audio', attrs: { src } }).run()
+  }
+
+  const handleSaveAudioUrl = (url: string) => {
+    setAudioDialogOpen(false)
+    insertAudio(url.trim())
+  }
+
+  const handleAudioSelected = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file || !editor) return
+
+    try {
+      const src = onUploadAudio ? await onUploadAudio(file) : await readFileAsDataUrl(file)
+      if (!src) return
+      setAudioDialogOpen(false)
+      insertAudio(src)
+    } catch {
+      // Upload failed or the file is unreadable; the editor stays unchanged.
+    }
   }
 
   const handleLineHeightChange = (value: string) => {
@@ -1080,6 +1118,9 @@ export function RichTextEditor({
           <ToolbarButton label="Video" disabled={!editor} onClick={() => setVideoDialogOpen(true)}>
             <VideoIcon />
           </ToolbarButton>
+          <ToolbarButton label="Audio" disabled={!editor} onClick={() => setAudioDialogOpen(true)}>
+            <Volume2 />
+          </ToolbarButton>
           <ToolbarButton
             label="Link"
             active={editor?.isActive('link')}
@@ -1170,11 +1211,26 @@ export function RichTextEditor({
         onChange={handleVideoSelected}
       />
 
+      <input
+        ref={audioInputRef}
+        type="file"
+        accept="audio/*"
+        className={styles.hiddenInput}
+        onChange={handleAudioSelected}
+      />
+
       <VideoDialog
         isOpen={videoDialogOpen}
         onClose={() => setVideoDialogOpen(false)}
         onSave={handleSaveVideoUrl}
         onPickFile={() => videoInputRef.current?.click()}
+      />
+
+      <AudioDialog
+        isOpen={audioDialogOpen}
+        onClose={() => setAudioDialogOpen(false)}
+        onSave={handleSaveAudioUrl}
+        onPickFile={() => audioInputRef.current?.click()}
       />
 
       <MathLiveDialog
