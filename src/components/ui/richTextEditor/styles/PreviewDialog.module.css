@@ -1,0 +1,23 @@
+@reference "../../../../app/globals.css";
+
+@layer components {
+  .dialog {
+    @apply max-w-[920px];
+  }
+
+  .title {
+    @apply text-left;
+  }
+
+  .body {
+    @apply mt-4 max-h-[60vh] overflow-auto rounded-md border border-input bg-background p-4 text-left;
+  }
+
+  .preview {
+    min-height: 12rem;
+  }
+
+  .preview :global(ul[data-type='taskList'] input[type='checkbox']) {
+    pointer-events: none;
+  }
+}

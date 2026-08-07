@@ -1,41 +1,41 @@
-'use client'
+"use client";
 
-import { useEffect, useId, useState } from 'react'
-import { Upload } from 'lucide-react'
+import { useEffect, useId, useState } from "react";
+import { Upload } from "lucide-react";
 
-import { Button } from '../button'
-import { Dialog, dialogStyles } from '../Dialog'
-import { Input } from '../input'
-import { Label } from '../label'
+import { Button } from "../button";
+import { Dialog, dialogStyles } from "../Dialog";
+import { Input } from "../input";
+import { Label } from "../label";
 
-import styles from './styles/VideoDialog.module.css'
+import styles from "./styles/VideoDialog.module.css";
 
 type VideoDialogProps = Readonly<{
-  isOpen: boolean
-  initialUrl?: string
-  onClose: () => void
-  onSave: (url: string) => void
-  onPickFile: () => void
-}>
+  isOpen: boolean;
+  initialUrl?: string;
+  onClose: () => void;
+  onSave: (url: string) => void;
+  onPickFile: () => void;
+}>;
 
 export function VideoDialog({
   isOpen,
-  initialUrl = '',
+  initialUrl = "",
   onClose,
   onSave,
   onPickFile,
 }: VideoDialogProps) {
-  const inputId = useId()
-  const [url, setUrl] = useState(initialUrl)
+  const inputId = useId();
+  const [url, setUrl] = useState(initialUrl);
 
   useEffect(() => {
-    if (isOpen) setUrl(initialUrl)
-  }, [initialUrl, isOpen])
+    if (isOpen) setUrl(initialUrl);
+  }, [initialUrl, isOpen]);
 
   const handleSave = () => {
-    const trimmed = url.trim()
-    if (trimmed) onSave(trimmed)
-  }
+    const trimmed = url.trim();
+    if (trimmed) onSave(trimmed);
+  };
 
   return (
     <Dialog
@@ -76,13 +76,15 @@ export function VideoDialog({
           autoFocus
           onChange={(event) => setUrl(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault()
-              handleSave()
+            if (event.key === "Enter") {
+              event.preventDefault();
+              handleSave();
             }
           }}
         />
-        <p className={styles.hint}>รองรับ YouTube (watch / youtu.be / embed / shorts) และไฟล์วิดีโอโดยตรง</p>
+        <p className={styles.hint}>
+          รองรับ YouTube (watch / youtu.be / embed / shorts) และไฟล์วิดีโอโดยตรง
+        </p>
 
         <button type="button" className={styles.uploadRow} onClick={onPickFile}>
           <Upload aria-hidden />
@@ -90,5 +92,5 @@ export function VideoDialog({
         </button>
       </div>
     </Dialog>
-  )
+  );
 }

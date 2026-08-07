@@ -2,23 +2,32 @@
 
 @layer components {
   .wrapper {
-    @apply my-1 flex w-full;
+    @apply relative my-1 inline-block max-w-full align-bottom;
+    /* Shrink-wrap the image. Without this an unsized image in a `display: block`
+     * alignment fills the line and `margin: auto` stops centring it. */
+    width: fit-content;
+    line-height: 0;
   }
 
   .alignleft {
-    @apply justify-start;
+    margin-left: 0;
+    margin-right: 0;
   }
 
   .aligncenter {
-    @apply justify-center;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .alignright {
-    @apply justify-end;
+    display: block;
+    margin-left: auto;
+    margin-right: 0;
   }
 
   .imageContainer {
-    @apply relative inline-block max-w-full;
+    @apply relative inline-block w-full max-w-full;
   }
 
   .imageContainerSelected {
@@ -26,6 +35,8 @@
     outline-offset: 0;
   }
 
+  /* Fills the wrapper, which owns the width. `max-w-full` is what keeps a stored
+   * px width from overflowing a narrower container. */
   .image {
     @apply block h-auto w-full max-w-full select-none;
   }

@@ -28,6 +28,15 @@
     font-weight: 400;
   }
 
+  /*
+   * ProseMirror gives an editable empty paragraph a trailing <br>, while the
+   * serialized HTML contains only <p></p>. Preserve the same line box in
+   * read-only previews so intentional blank lines do not collapse.
+   */
+  .content :global(p:empty::before) {
+    content: '\00a0';
+  }
+
   .content :global(ul) {
     margin: 0.5em 0;
     padding-left: 1.5em;
@@ -38,6 +47,40 @@
     margin: 0.5em 0;
     padding-left: 1.5em;
     list-style: decimal;
+  }
+
+  .content :global(ul[data-type='taskList']) {
+    padding-left: 0;
+    list-style: none;
+  }
+
+  .content :global(ul[data-type='taskList'] li) {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+    margin: 0.25em 0;
+  }
+
+  .content :global(ul[data-type='taskList'] li > label) {
+    display: inline-flex;
+    /* `lh` follows the task item's stored line-height, including custom values. */
+    height: 1lh;
+    flex: 0 0 auto;
+    align-items: center;
+    margin-top: 0;
+  }
+
+  .content :global(ul[data-type='taskList'] li > label input[type='checkbox']) {
+    margin: 0;
+  }
+
+  .content :global(ul[data-type='taskList'] li > div) {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .content :global(ul[data-type='taskList'] li > div > p) {
+    margin: 0;
   }
 
   .content :global(a) {
@@ -59,23 +102,26 @@
 
   /* ── Media ───────────────────────────────────────────────── */
   .content :global(img) {
-    display: block;
+    display: inline-block;
     max-width: 100%;
     height: auto;
     margin: 0.25em 0;
+    vertical-align: bottom;
   }
 
   .content :global(img[data-align='left']) {
     margin-left: 0;
-    margin-right: auto;
+    margin-right: 0;
   }
 
   .content :global(img[data-align='center']) {
+    display: block;
     margin-left: auto;
     margin-right: auto;
   }
 
   .content :global(img[data-align='right']) {
+    display: block;
     margin-left: auto;
     margin-right: 0;
   }
@@ -179,16 +225,6 @@
   .content :global(td p),
   .content :global(th p) {
     margin: 0.5em 0;
-  }
-
-  /*
-   * ProseMirror renders an editable empty paragraph with a trailing <br>, but
-   * getHTML() serializes it as <p></p>. Give that empty preview paragraph the
-   * same line box so newly inserted table rows keep identical heights.
-   */
-  .content :global(td p:empty::before),
-  .content :global(th p:empty::before) {
-    content: '\00a0';
   }
 
   /* ── Math ────────────────────────────────────────────────── */

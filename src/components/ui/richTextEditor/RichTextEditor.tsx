@@ -16,6 +16,7 @@ import StarterKit from '@tiptap/starter-kit'
 import TextAlign from '@tiptap/extension-text-align'
 import { TextStyle, Color, FontSize } from '@tiptap/extension-text-style'
 import Highlight from '@tiptap/extension-highlight'
+import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { Mathematics } from '@tiptap/extension-mathematics'
 import 'katex/contrib/mhchem'
 import {
@@ -23,13 +24,17 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  Check,
   Code2,
+  Eye,
   FlaskConical,
   Highlighter,
   ImageIcon,
   Italic,
   Link2,
   List,
+  ListCollapse,
+  ListChecks,
   ListOrdered,
   Maximize2,
   Minimize2,
@@ -44,6 +49,8 @@ import {
 import { cn } from '@libs'
 import { resolveMathVariant } from '@utils/editor/richTextMath'
 
+import { IconDropdownMenu } from '../IconDropdownMenu'
+
 import {
   ColorPalettePicker,
   HIGHLIGHT_COLORS,
@@ -51,7 +58,9 @@ import {
 } from './ColorPalettePicker'
 import { DoubleUnderline } from './doubleUnderlineExtension'
 import { LinkDialog } from './LinkDialog'
+import { LineHeight } from './lineHeightExtension'
 import { MathLiveDialog, type MathLiveDialogVariant } from './MathLiveDialog'
+import { PreviewDialog } from './PreviewDialog'
 import { RichTextImage } from './richTextImageExtension'
 import { parseVideoSource, RichTextVideo } from './richTextVideoExtension'
 import { SourceCodeDialog } from './SourceCodeDialog'
@@ -71,6 +80,8 @@ import { TableContextMenu } from './TableContextMenu'
 import { TablePropertiesDialog } from './TablePropertiesDialog'
 import { TableRowResizeHandles } from './TableRowResizeHandles'
 import { TableSizePicker } from './TableSizePicker'
+import { TextCaseMenu } from './TextCaseMenu'
+import { applyTextCase } from './textCaseCommands'
 import { VideoDialog } from './VideoDialog'
 import contentStyles from './styles/RichTextContent.module.css'
 import styles from './styles/RichTextEditor.module.css'
@@ -111,6 +122,10 @@ function ToolbarButton({ label, active, disabled, onClick, children }: ToolbarBu
       aria-pressed={active}
       disabled={disabled}
       className={cn(styles.toolbarButton, active && styles.toolbarButtonActive)}
+      // Keep the ProseMirror selection intact while a toolbar command is clicked.
+      // Otherwise the button can take focus before `onClick`, causing block commands
+      // such as toggleTaskList to run at a stale/fallback document position.
+      onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
     >
       {children}
@@ -131,6 +146,8 @@ const NODE_PATH_LABELS: Record<string, string> = {
   paragraph: 'p',
   bulletList: 'ul',
   orderedList: 'ol',
+  taskList: 'ul',
+  taskItem: 'li',
   listItem: 'li',
   table: 'table',
   tableRow: 'tr',
@@ -176,6 +193,7 @@ type MenuBarProps = Readonly<{
   onInsertMath: () => void
   onInsertScience: () => void
   onToggleFullscreen: () => void
+  onOpenPreview: () => void
   onOpenSourceCode: () => void
 }>
 
@@ -190,6 +208,7 @@ function MenuBar({
   onInsertMath,
   onInsertScience,
   onToggleFullscreen,
+  onOpenPreview,
   onOpenSourceCode,
 }: MenuBarProps) {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
@@ -260,6 +279,7 @@ function MenuBar({
       id: 'view',
       label: 'View',
       items: [
+        { label: 'Preview…', onClick: onOpenPreview },
         {
           label: isFullscreen ? 'Exit fullscreen' : 'Fullscreen',
           shortcut: 'Ctrl+Shift+F',
@@ -291,6 +311,25 @@ function MenuBar({
           label: 'Double underline',
           onClick: () =>
             editor?.chain().focus().unsetUnderline().toggleDoubleUnderline().run(),
+        },
+        { type: 'separator' as const },
+        {
+          label: 'lowercase',
+          onClick: () => {
+            if (editor) applyTextCase(editor, 'lowercase')
+          },
+        },
+        {
+          label: 'UPPERCASE',
+          onClick: () => {
+            if (editor) applyTextCase(editor, 'uppercase')
+          },
+        },
+        {
+          label: 'Title Case',
+          onClick: () => {
+            if (editor) applyTextCase(editor, 'titlecase')
+          },
         },
         { type: 'separator' as const },
         {
@@ -326,7 +365,10 @@ function MenuBar({
     {
       id: 'tools',
       label: 'Tools',
-      items: [{ label: 'Source code…', onClick: onOpenSourceCode }],
+      items: [
+        { label: 'Preview…', onClick: onOpenPreview },
+        { label: 'Source code…', onClick: onOpenSourceCode },
+      ],
     },
   ]
 
@@ -395,6 +437,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
 
 const FONT_SIZES_PX = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36] as const
 const DEFAULT_FONT_SIZE_PX = 16
+const LINE_HEIGHTS = ['normal', '1', '1.15', '1.5', '2', '2.5', '3'] as const
 
 function getActiveFontSizePx(editor: Editor): number {
   const raw = editor.getAttributes('textStyle').fontSize as string | undefined
@@ -461,6 +504,7 @@ export function RichTextEditor({
     useState<TablePropertiesValues>(DEFAULT_TABLE_PROPERTIES)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [sourceCodeOpen, setSourceCodeOpen] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [videoDialogOpen, setVideoDialogOpen] = useState(false)
   const linkSelectionRef = useRef<{ from: number; to: number; wasLink: boolean } | null>(null)
   const openFormulaEditorRef = useRef<(state: FormulaDialogState) => void>(() => {})
@@ -486,7 +530,12 @@ export function RichTextEditor({
       FontSize,
       Color,
       Highlight.configure({ multicolor: true }),
-      RichTextImage.configure({ allowBase64: true }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      LineHeight,
+      // TinyMCE treats images as inline atoms: they can be dragged between
+      // characters and the caret can continue immediately after them.
+      RichTextImage.configure({ allowBase64: true, inline: true }),
       RichTextVideo,
       // TipTap built-in column resize (prosemirror-tables columnResizing).
       // `View` is forwarded to columnResizing — the only way table attributes
@@ -591,6 +640,7 @@ export function RichTextEditor({
     tablePropertiesOpen ||
     linkDialogOpen ||
     sourceCodeOpen ||
+    previewOpen ||
     videoDialogOpen ||
     formulaDialog !== null
 
@@ -790,7 +840,19 @@ export function RichTextEditor({
     chain.setFontSize(`${nextPx}px`).run()
   }
 
+  const handleLineHeightChange = (value: string) => {
+    if (!editor) return
+    const chain = editor.chain().focus()
+    if (value === 'normal') {
+      chain.unsetLineHeight().run()
+      return
+    }
+    chain.setLineHeight(value).run()
+  }
+
   const fontSizeValue = editor ? getActiveFontSizePx(editor) : DEFAULT_FONT_SIZE_PX
+  const lineHeightValue =
+    (editor?.getAttributes('paragraph').lineHeight as string | undefined) ?? 'normal'
   const mediaAlignment = editor ? getMediaAlignment(editor) : null
   const elementPath = editor ? getElementPath(editor) : []
   const textStats = editor ? getTextStats(editor) : { words: 0, chars: 0 }
@@ -836,6 +898,37 @@ export function RichTextEditor({
               </option>
             ))}
           </select>
+          <IconDropdownMenu
+            trigger={<ListCollapse />}
+            triggerLabel="Line height"
+            wrapperClassName={styles.lineHeightWrap}
+            triggerClassName={cn(
+              styles.toolbarButton,
+              lineHeightValue !== 'normal' && styles.toolbarButtonActive,
+              !editor && styles.toolbarButtonDisabled,
+            )}
+            contentClassName={`${styles.menuDropdown} ${styles.lineHeightMenu}`}
+          >
+            {({ close }) =>
+              LINE_HEIGHTS.map((lineHeight) => (
+                <button
+                  key={lineHeight}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={lineHeightValue === lineHeight}
+                  disabled={!editor}
+                  className={styles.menuDropdownItem}
+                  onClick={() => {
+                    handleLineHeightChange(lineHeight)
+                    close()
+                  }}
+                >
+                  <span>{lineHeight === 'normal' ? 'Default' : lineHeight}</span>
+                  {lineHeightValue === lineHeight ? <Check /> : null}
+                </button>
+              ))
+            }
+          </IconDropdownMenu>
         </ToolbarGroup>
 
         <ToolbarDivider />
@@ -897,6 +990,7 @@ export function RichTextEditor({
               </span>
             }
           />
+          <TextCaseMenu editor={editor} />
           <ColorPalettePicker
             label="Highlight color"
             disabled={!editor}
@@ -936,6 +1030,13 @@ export function RichTextEditor({
             onClick={() => editor?.chain().focus().toggleOrderedList().run()}
           >
             <ListOrdered />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Task list"
+            active={editor?.isActive('taskList')}
+            onClick={() => editor?.chain().focus().toggleTaskList().run()}
+          >
+            <ListChecks />
           </ToolbarButton>
         </ToolbarGroup>
 
@@ -1003,6 +1104,9 @@ export function RichTextEditor({
         <ToolbarDivider />
 
         <ToolbarGroup>
+          <ToolbarButton label="Preview" disabled={!editor} onClick={() => setPreviewOpen(true)}>
+            <Eye />
+          </ToolbarButton>
           <ToolbarButton label="Source code" disabled={!editor} onClick={() => setSourceCodeOpen(true)}>
             <Code2 />
           </ToolbarButton>
@@ -1093,6 +1197,12 @@ export function RichTextEditor({
         html={editor?.getHTML() ?? value}
         onClose={() => setSourceCodeOpen(false)}
         onSave={handleSaveSourceCode}
+      />
+
+      <PreviewDialog
+        isOpen={previewOpen}
+        html={editor?.getHTML() ?? value}
+        onClose={() => setPreviewOpen(false)}
       />
 
       <TablePropertiesDialog

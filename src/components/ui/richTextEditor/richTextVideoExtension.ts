@@ -125,6 +125,8 @@ export const RichTextVideo = Node.create({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(ResizableVideoNodeView)
+    // Keeps the cached node view position fresh so a video whose position
+    // shifts does not mis-report itself as selected.
+    return ReactNodeViewRenderer(ResizableVideoNodeView, { trackNodeViewPosition: true })
   },
 })

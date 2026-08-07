@@ -215,10 +215,44 @@
     opacity: 0.45;
   }
 
+  .lineHeightWrap {
+    position: relative;
+  }
+
+  .lineHeightMenu {
+    top: calc(100% + 2px);
+    min-width: 9rem;
+  }
+
+  .lineHeightMenu .menuDropdownItem :global(svg) {
+    width: 16px;
+    height: 16px;
+  }
+
   /* ── Dropdown panels (color / table) ─────────────────────── */
   .tablePickerWrap,
   .colorPickerWrap {
     position: relative;
+  }
+
+  .textCaseWrap {
+    position: relative;
+  }
+
+  .textCaseMenu {
+    top: calc(100% + 2px);
+    min-width: 11rem;
+  }
+
+  .textCaseMenuLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .textCaseMenuLabel :global(svg) {
+    width: 18px;
+    height: 18px;
   }
 
   .tablePicker,

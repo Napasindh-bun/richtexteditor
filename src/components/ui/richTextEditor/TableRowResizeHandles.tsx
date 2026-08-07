@@ -23,8 +23,7 @@ type TableRowResizeHandlesProps = Readonly<{
   containerRef: RefObject<HTMLElement | null>
 }>
 
-type CellLayout = Readonly<{
-  cell: HTMLTableCellElement
+type RowLayout = Readonly<{
   tableElement: HTMLTableElement
   tablePos: number
   rowPos: number
@@ -47,7 +46,7 @@ type RowResizeState = Readonly<{
   previousInlineHeights: string[]
 }>
 
-function getSelectedCellLayout(editor: Editor): CellLayout | null {
+function getSelectedRowLayout(editor: Editor): RowLayout | null {
   if (!editor.isActive('tableCell') && !editor.isActive('tableHeader')) return null
 
   const { view, state } = editor
@@ -84,17 +83,23 @@ function getSelectedCellLayout(editor: Editor): CellLayout | null {
   const tableElement = dom.closest('table')
   if (!(tableElement instanceof HTMLTableElement)) return null
 
-  const box = dom.getBoundingClientRect()
+  const rowElement = tableElement.rows.item(rect.top)
+  if (!rowElement) return null
+
+  // The horizontal resize target represents the whole row boundary, just as
+  // TipTap's column handle represents the whole column boundary. Reading the
+  // <tr> also keeps the boundary correct when the selected cell has a rowspan.
+  const rowBox = rowElement.getBoundingClientRect()
+  const tableBox = tableElement.getBoundingClientRect()
   return {
-    cell: dom,
     tableElement,
     tablePos,
     rowPos,
     rowIndex: rect.top,
-    top: box.top,
-    left: box.left,
-    width: box.width,
-    height: box.height,
+    top: rowBox.top,
+    left: tableBox.left,
+    width: tableBox.width,
+    height: rowBox.height,
   }
 }
 
@@ -111,7 +116,7 @@ export function TableRowResizeHandles({
   editor,
   containerRef,
 }: TableRowResizeHandlesProps) {
-  const [layout, setLayout] = useState<CellLayout | null>(null)
+  const [layout, setLayout] = useState<RowLayout | null>(null)
   const [resizing, setResizing] = useState(false)
 
   const resizeRef = useRef<RowResizeState | null>(null)
@@ -121,7 +126,7 @@ export function TableRowResizeHandles({
 
   const refreshLayout = useCallback(() => {
     if (resizeRef.current) return
-    setLayout(getSelectedCellLayout(editor))
+    setLayout(getSelectedRowLayout(editor))
   }, [editor])
 
   useLayoutEffect(() => {
@@ -247,6 +252,7 @@ export function TableRowResizeHandles({
       ref={handleRef}
       type="button"
       data-table-row-resize-handle
+      data-resizing={resizing ? 'true' : 'false'}
       aria-label="Resize row"
       className={styles.handle}
       style={{
