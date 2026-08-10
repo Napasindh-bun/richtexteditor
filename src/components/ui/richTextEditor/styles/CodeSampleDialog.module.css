@@ -1,0 +1,15 @@
+@reference "../../../../app/globals.css";
+
+@layer components {
+  .body { @apply grid gap-4; }
+  .field { @apply grid gap-2; }
+  .select {
+    @apply h-10 rounded-md border border-input bg-background px-3 text-sm outline-none;
+  }
+  .select:focus { @apply border-ring ring-2 ring-ring/30; }
+  .code {
+    @apply min-h-80 w-full resize-y rounded-md border border-input bg-slate-950 p-4 font-mono text-sm text-slate-100 outline-none;
+    tab-size: 2;
+  }
+  .code:focus { @apply border-ring ring-2 ring-ring/30; }
+}

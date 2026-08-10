@@ -38,7 +38,8 @@
   /* Fills the wrapper, which owns the width. `max-w-full` is what keeps a stored
    * px width from overflowing a narrower container. */
   .image {
-    @apply block h-auto w-full max-w-full select-none;
+    @apply block h-auto max-w-full select-none;
+    transform-origin: center;
   }
 
   .handle {

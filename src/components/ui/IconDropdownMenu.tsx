@@ -48,6 +48,9 @@ function IconDropdownMenu({
     <div ref={menuRef} className={wrapperClassName}>
       <button
         type="button"
+        // Preserve the editor selection while opening a toolbar dropdown.
+        // This is required inside TipTap's BubbleMenu, which hides on blur.
+        onMouseDown={(event) => event.preventDefault()}
         onClick={toggleMenu}
         className={triggerClassName}
         aria-label={triggerLabel}

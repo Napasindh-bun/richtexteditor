@@ -8,6 +8,7 @@ import { cn } from '@libs'
 
 import {
   MIN_IMAGE_WIDTH_PX,
+  normalizeImageHeight,
   normalizeImageWidth,
   toImageWidthPx,
 } from './richTextImageExtension'
@@ -65,7 +66,7 @@ export function ResizableImageNodeView({
   editor,
   getPos,
 }: Readonly<NodeViewProps>) {
-  const { src, alt, title, align, width } = node.attrs
+  const { src, alt, title, align, width, height, rotation, flipX, flipY } = node.attrs
   const containerRef = useRef<HTMLSpanElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const [previewWidthPx, setPreviewWidthPx] = useState<number | null>(null)
@@ -140,17 +141,21 @@ export function ResizableImageNodeView({
     previewWidthPx != null
       ? `${Math.round(previewWidthPx)}px`
       : (normalizeImageWidth(width) ?? undefined)
+  const renderedHeight = normalizeImageHeight(height) ?? undefined
+  const normalizedRotation = ((Number(rotation) || 0) % 360 + 360) % 360
+  const imageTransform = `rotate(${normalizedRotation}deg) scale(${flipX ? -1 : 1}, ${flipY ? -1 : 1})`
 
   return (
     <NodeViewWrapper
       as="span"
       className={cn(styles.wrapper, styles[`align${alignment}`])}
-      style={{ width: renderedWidth }}
+      style={{ width: renderedWidth, height: renderedHeight }}
       data-drag-handle
     >
       <span
         ref={containerRef}
         className={cn(styles.imageContainer, selected && styles.imageContainerSelected)}
+        style={{ height: renderedHeight ? '100%' : undefined }}
       >
         <img
           ref={imageRef}
@@ -158,6 +163,11 @@ export function ResizableImageNodeView({
           alt={alt ?? ''}
           title={title ?? ''}
           className={styles.image}
+          style={{
+            width: renderedWidth ? '100%' : undefined,
+            height: renderedHeight ? '100%' : undefined,
+            transform: imageTransform,
+          }}
           draggable={false}
           data-align={alignment}
         />

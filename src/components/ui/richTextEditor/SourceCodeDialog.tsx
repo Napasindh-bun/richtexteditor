@@ -60,7 +60,7 @@ export function SourceCodeDialog({ isOpen, html, onClose, onSave }: SourceCodeDi
           value={draft}
           spellCheck={false}
           autoComplete="off"
-          wrap="off"
+          wrap="soft"
           onChange={(event) => setDraft(event.target.value)}
         />
       </div>

@@ -30,6 +30,7 @@ const LEAF_BLOCK_TAGS = new Set([
   'col',
   'figcaption',
   'video',
+  'audio',
   'iframe',
 ])
 

@@ -1,4 +1,5 @@
 import { mergeAttributes, Node } from '@tiptap/core'
+import { NodeSelection, Plugin, TextSelection } from '@tiptap/pm/state'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 
 import { ResizableAudioNodeView } from './ResizableAudioNodeView'
@@ -32,14 +33,19 @@ export function toAudioWidthPx(pixels: number, maxPixels: number): string {
   return `${Math.round(clamped)}px`
 }
 
+export function parseAudioAlign(align: unknown): 'left' | 'center' | 'right' {
+  return align === 'center' || align === 'right' ? align : 'left'
+}
+
 /** An audio player that remains playable in serialized HTML and previews. */
 export const RichTextAudio = Node.create({
   name: 'audio',
-  group: 'block',
+  group: 'inline',
+  inline: true,
   atom: true,
-  // Native seek bars use pointer dragging. Making the node draggable causes
-  // ProseMirror to steal that gesture before the browser can update the time.
-  draggable: false,
+  // Moving the node is restricted to the dedicated grip in the node view so
+  // dragging the native seek bar never moves the whole player.
+  draggable: true,
   selectable: true,
 
   addAttributes() {
@@ -51,6 +57,13 @@ export const RichTextAudio = Node.create({
       title: {
         default: null,
         parseHTML: (element) => element.getAttribute('title'),
+      },
+      align: {
+        default: 'left',
+        parseHTML: (element) => parseAudioAlign(element.getAttribute('data-align')),
+        renderHTML: (attributes: { align?: unknown }) => ({
+          'data-align': parseAudioAlign(attributes.align),
+        }),
       },
       width: {
         default: null as string | null,
@@ -79,10 +92,52 @@ export const RichTextAudio = Node.create({
   addNodeView() {
     return ReactNodeViewRenderer(ResizableAudioNodeView, {
       trackNodeViewPosition: true,
-      // Native controls live in a browser shadow tree and event.target differs
-      // between engines. Ignore every event from this atom at ProseMirror level;
-      // controls and React resize handles continue receiving normal DOM events.
-      stopEvent: () => true,
+      stopEvent: ({ event }) => {
+        if (event.type === 'dragstart') {
+          const target = event.target
+          const startedFromGrip =
+            target instanceof Element && Boolean(target.closest('[data-drag-handle]'))
+
+          // The outer ProseMirror node is draggable, but native audio controls
+          // must retain their own pointer-drag behaviour (seek and volume).
+          if (!startedFromGrip) {
+            event.preventDefault()
+            return true
+          }
+
+          // ProseMirror must receive drags from the grip so it can move the node.
+          return false
+        }
+        if (event.type.startsWith('drag') || event.type === 'drop') return false
+        // Native controls live in a browser shadow tree and event.target differs
+        // between engines. Ignore every other event from this atom at
+        // ProseMirror level; controls and React resize handles continue
+        // receiving normal DOM events.
+        return true
+      },
     })
+  },
+
+  addProseMirrorPlugins() {
+    const audioType = this.type
+
+    return [
+      new Plugin({
+        props: {
+          handleTextInput: (view, _from, _to, text) => {
+            const { selection } = view.state
+            if (!(selection instanceof NodeSelection) || selection.node.type !== audioType) {
+              return false
+            }
+
+            const insertPos = selection.to
+            let tr = view.state.tr.insertText(text, insertPos)
+            tr = tr.setSelection(TextSelection.create(tr.doc, insertPos + text.length))
+            view.dispatch(tr.scrollIntoView())
+            return true
+          },
+        },
+      }),
+    ]
   },
 })

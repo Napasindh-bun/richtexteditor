@@ -5,6 +5,7 @@ import { useMemo } from 'react'
 import { cn } from '@libs'
 import { htmlWithRenderedMath } from '@utils/editor/richTextMath'
 
+import { htmlWithHighlightedCode } from './codeSampleHighlight'
 import contentStyles from './styles/RichTextContent.module.css'
 import styles from './styles/RichTextHtmlPreview.module.css'
 
@@ -25,7 +26,7 @@ export function RichTextHtmlPreview({
 }: RichTextHtmlPreviewProps) {
   const trimmed = html.trim()
   const renderedHtml = useMemo(
-    () => (trimmed ? htmlWithRenderedMath(trimmed) : ''),
+    () => (trimmed ? htmlWithHighlightedCode(htmlWithRenderedMath(trimmed)) : ''),
     [trimmed],
   )
 

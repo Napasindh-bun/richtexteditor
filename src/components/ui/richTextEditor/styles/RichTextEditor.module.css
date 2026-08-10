@@ -229,6 +229,64 @@
     height: 16px;
   }
 
+  .textDecorationWrap {
+    position: relative;
+  }
+
+  .textDecorationMenu {
+    top: calc(100% + 2px);
+    min-width: 13rem;
+  }
+
+  .menuItemCheck {
+    margin-left: auto;
+    width: 16px;
+    height: 16px;
+  }
+
+  .quickToolbar {
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    border: 1px solid #b8bec5;
+    border-radius: 5px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(34, 47, 62, 0.22);
+  }
+
+  .imageQuickToolbar {
+    gap: 1px;
+  }
+
+  .imageSizeField {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 3px;
+    color: #5c5f66;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .imageSizeField input {
+    width: 64px;
+    height: 30px;
+    padding: 0 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: #fff;
+    color: #222f3e;
+    font: inherit;
+    font-weight: 400;
+  }
+
+  .imageSizeField input:focus {
+    border-color: #2d70a4;
+    outline: 1px solid #2d70a4;
+  }
+
   /* ── Dropdown panels (color / table) ─────────────────────── */
   .tablePickerWrap,
   .colorPickerWrap {
@@ -492,6 +550,10 @@
   .editorContent {
     min-height: 100%;
     outline: none;
+  }
+
+  .formatPainterActive .editorContent {
+    cursor: crosshair;
   }
 
   /*

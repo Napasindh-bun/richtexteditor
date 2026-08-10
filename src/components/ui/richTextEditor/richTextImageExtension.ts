@@ -39,6 +39,30 @@ export function normalizeImageWidth(raw: unknown): string | null {
   return value
 }
 
+/** Image height accepts the same CSS lengths as width. */
+export const normalizeImageHeight = normalizeImageWidth
+
+function parseBooleanAttribute(raw: string | undefined): boolean {
+  return raw === 'true'
+}
+
+function normalizeRotation(raw: unknown): number {
+  const value = typeof raw === 'number' ? raw : Number(raw)
+  if (!Number.isFinite(value)) return 0
+  return ((Math.round(value / 90) * 90) % 360 + 360) % 360
+}
+
+function imageTransform(attributes: {
+  rotation?: number
+  flipX?: boolean
+  flipY?: boolean
+}): string {
+  const rotation = normalizeRotation(attributes.rotation)
+  const scaleX = attributes.flipX ? -1 : 1
+  const scaleY = attributes.flipY ? -1 : 1
+  return `rotate(${rotation}deg) scale(${scaleX}, ${scaleY})`
+}
+
 /** Clamp a measured pixel width into the allowed range and format it for the attribute. */
 export function toImageWidthPx(pixels: number, maxPixels: number): string {
   const upperBound = Math.max(maxPixels, MIN_IMAGE_WIDTH_PX)
@@ -76,12 +100,44 @@ export const RichTextImage = Image.extend({
           }
         },
       },
-      // Aspect ratio is locked: height always derives from width. A pasted
-      // `height` attribute would round-trip and fight the `height: auto` above.
+      // Width and height can be edited independently from the image toolbar.
       height: {
-        default: null,
-        parseHTML: () => null,
-        renderHTML: () => ({}),
+        default: null as string | null,
+        parseHTML: (element) =>
+          normalizeImageHeight(element.style.height || element.getAttribute('height')),
+        renderHTML: (attributes: { height?: string | null }) => {
+          const height = normalizeImageHeight(attributes.height)
+          if (!height) return {}
+
+          return {
+            height: height.endsWith('px') ? height.slice(0, -2) : height,
+            style: `height: ${height};`,
+          }
+        },
+      },
+      rotation: {
+        default: 0,
+        parseHTML: (element) => normalizeRotation(element.dataset.rotation),
+        renderHTML: (attributes) => {
+          const rotation = normalizeRotation(attributes.rotation)
+          if (rotation === 0 && !attributes.flipX && !attributes.flipY) return {}
+          return {
+            ...(rotation === 0 ? {} : { 'data-rotation': String(rotation) }),
+            style: `transform: ${imageTransform(attributes)};`,
+          }
+        },
+      },
+      flipX: {
+        default: false,
+        parseHTML: (element) => parseBooleanAttribute(element.dataset.flipX),
+        renderHTML: (attributes) =>
+          attributes.flipX ? { 'data-flip-x': 'true' } : {},
+      },
+      flipY: {
+        default: false,
+        parseHTML: (element) => parseBooleanAttribute(element.dataset.flipY),
+        renderHTML: (attributes) =>
+          attributes.flipY ? { 'data-flip-y': 'true' } : {},
       },
     }
   },

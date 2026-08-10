@@ -2,12 +2,60 @@
 
 @layer components {
   .wrapper {
-    @apply my-2 flex w-full justify-start;
+    @apply relative my-2 inline-flex max-w-full items-center;
+    width: min(100%, 32rem);
+    vertical-align: middle;
+  }
+
+  .alignleft {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .aligncenter {
+    display: flex;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .alignright {
+    display: flex;
+    margin-left: auto;
+    margin-right: 0;
+  }
+
+  /*
+   * The only drag source for the node. It has to sit outside the player because
+   * a draggable ancestor would swallow the pointer drag the seek bar needs.
+   */
+  .grip {
+    @apply absolute flex items-center justify-center rounded p-0 text-slate-400;
+    left: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 28px;
+    cursor: grab;
+    opacity: 0.45;
+    transition: opacity 120ms ease;
+  }
+
+  .grip:active {
+    cursor: grabbing;
+  }
+
+  .wrapper:hover .grip,
+  .grip:focus-visible {
+    opacity: 1;
+  }
+
+  .grip svg {
+    width: 14px;
+    height: 14px;
   }
 
   .playerContainer {
-    @apply relative max-w-full;
-    width: min(100%, 32rem);
+    @apply relative w-full max-w-full;
   }
 
   .playerContainerSelected {

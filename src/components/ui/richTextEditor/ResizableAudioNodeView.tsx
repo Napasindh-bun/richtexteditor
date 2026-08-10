@@ -1,6 +1,7 @@
 'use client'
 
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react'
+import { GripVertical } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
 
 import { cn } from '@libs'
@@ -8,6 +9,7 @@ import { cn } from '@libs'
 import {
   MIN_AUDIO_WIDTH_PX,
   normalizeAudioWidth,
+  parseAudioAlign,
   toAudioWidthPx,
 } from './richTextAudioExtension'
 import styles from './styles/ResizableAudioNodeView.module.css'
@@ -41,10 +43,11 @@ export function ResizableAudioNodeView({
   selected,
   editor,
 }: Readonly<NodeViewProps>) {
-  const { src, title, width } = node.attrs
-  const wrapperRef = useRef<HTMLDivElement>(null)
+  const { src, title, align, width } = node.attrs
+  const wrapperRef = useRef<HTMLSpanElement>(null)
   const playerRef = useRef<HTMLAudioElement>(null)
   const [previewWidthPx, setPreviewWidthPx] = useState<number | null>(null)
+  const alignment = parseAudioAlign(align)
 
   const handleResizeStart = useCallback(
     (handle: ResizeHandle, event: React.PointerEvent<HTMLButtonElement>) => {
@@ -91,10 +94,23 @@ export function ResizableAudioNodeView({
     previewWidthPx == null ? (normalizeAudioWidth(width) ?? undefined) : `${previewWidthPx}px`
 
   return (
-    <NodeViewWrapper ref={wrapperRef} as="div" className={styles.wrapper}>
+    <NodeViewWrapper
+      ref={wrapperRef}
+      as="span"
+      className={cn(styles.wrapper, styles[`align${alignment}`])}
+      style={{ width: renderedWidth }}
+    >
+      <button
+        type="button"
+        aria-label="ลากเพื่อย้ายตัวเล่นเสียง"
+        className={styles.grip}
+        data-drag-handle
+        draggable
+      >
+        <GripVertical aria-hidden />
+      </button>
       <div
         className={cn(styles.playerContainer, selected && styles.playerContainerSelected)}
-        style={{ width: renderedWidth }}
       >
         <audio
           ref={playerRef}
@@ -104,6 +120,7 @@ export function ResizableAudioNodeView({
           controls
           preload="metadata"
           draggable={false}
+          data-align={alignment}
         />
         {(['nw', 'ne', 'sw', 'se'] as const).map((handle) => (
           <button

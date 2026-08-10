@@ -21,6 +21,14 @@
     line-height: normal;
     color: #333;
     text-align: left;
+
+    /*
+     * ProseMirror sets these on its own editable surface, so consecutive spaces
+     * survive while authoring. Serialized HTML keeps the literal spaces, so the
+     * preview needs the same rules or the browser collapses each run to one.
+     */
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
   }
 
   .content :global(p) {
@@ -142,6 +150,21 @@
     margin: 0.5em 0;
   }
 
+  .content :global(audio[data-align='left']) {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .content :global(audio[data-align='center']) {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .content :global(audio[data-align='right']) {
+    margin-left: auto;
+    margin-right: 0;
+  }
+
   .content :global(audio.ProseMirror-selectednode) {
     border-radius: 999px;
     outline: 2px solid #38bdf8;
@@ -239,6 +262,40 @@
   .content :global(th p) {
     margin: 0.5em 0;
   }
+
+  /* ── Code samples ───────────────────────────────────────── */
+  .content :global(pre) {
+    max-width: 100%;
+    margin: 0.75em 0;
+    overflow-x: auto;
+    border-radius: 6px;
+    background: #0f172a;
+    padding: 1rem;
+    color: #e2e8f0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.875em;
+    line-height: 1.6;
+    tab-size: 2;
+  }
+
+  .content :global(pre code) {
+    display: block;
+    min-width: max-content;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+  }
+
+  .content :global(.hljs-keyword),
+  .content :global(.hljs-selector-tag),
+  .content :global(.hljs-literal) { color: #c084fc; }
+  .content :global(.hljs-string),
+  .content :global(.hljs-attribute) { color: #86efac; }
+  .content :global(.hljs-number),
+  .content :global(.hljs-symbol) { color: #fbbf24; }
+  .content :global(.hljs-comment) { color: #94a3b8; font-style: italic; }
+  .content :global(.hljs-title),
+  .content :global(.hljs-function) { color: #7dd3fc; }
 
   /* ── Math ────────────────────────────────────────────────── */
   .content :global(.katex) {
