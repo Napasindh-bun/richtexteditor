@@ -71,6 +71,7 @@ import { resolveMathVariant } from '@utils/editor/richTextMath'
 import { IconDropdownMenu } from '../IconDropdownMenu'
 
 import { AudioDialog } from './AudioDialog'
+import { ImageDialog } from './ImageDialog'
 import { codeLowlight } from './codeSampleHighlight'
 import { CodeSampleDialog } from './CodeSampleDialog'
 import {
@@ -344,65 +345,116 @@ function getSelectedImagePixels(editor: Editor, dimension: 'width' | 'height'): 
   return measured && measured > 0 ? Math.round(measured) : undefined
 }
 
+/**
+ * Update the selected image while keeping NodeSelection. TipTap's
+ * `chain().focus().updateAttributes()` can drop the node selection after a
+ * React node-view re-render (flip/rotate), which dismisses the floating toolbar.
+ */
+function updateSelectedImageAttributes(
+  editor: Editor,
+  attributes: Record<string, unknown>,
+): boolean {
+  const { selection } = editor.state
+  if (!(selection instanceof NodeSelection) || selection.node.type.name !== 'image') {
+    return false
+  }
+
+  const pos = selection.from
+  const applied = editor
+    .chain()
+    .command(({ tr, dispatch }) => {
+      const node = tr.doc.nodeAt(pos)
+      if (!node || node.type.name !== 'image') return false
+      if (dispatch) {
+        tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...attributes })
+        tr.setSelection(NodeSelection.create(tr.doc, pos))
+        // Keep the floating toolbar visible across the node-view re-render.
+        tr.setMeta('richTextBubbleMenu', 'show')
+      }
+      return true
+    })
+    .run()
+
+  if (applied && !editor.view.hasFocus()) {
+    editor.view.focus()
+  }
+
+  return applied
+}
+
 function ImageQuickToolbar({ editor }: Readonly<{ editor: Editor }>) {
   const attrs = editor.getAttributes('image')
   const width = getSelectedImagePixels(editor, 'width')
   const height = getSelectedImagePixels(editor, 'height')
   const rotation = Number(attrs.rotation) || 0
+  const widthInputRef = useRef<HTMLInputElement>(null)
+  const heightInputRef = useRef<HTMLInputElement>(null)
+
+  // Sync W/H with resize-handle changes without remounting the inputs.
+  useEffect(() => {
+    const widthInput = widthInputRef.current
+    if (widthInput && document.activeElement !== widthInput) {
+      widthInput.value = width != null ? String(width) : ''
+    }
+  }, [width])
+
+  useEffect(() => {
+    const heightInput = heightInputRef.current
+    if (heightInput && document.activeElement !== heightInput) {
+      heightInput.value = height != null ? String(height) : ''
+    }
+  }, [height])
 
   const updateDimension = (dimension: 'width' | 'height', rawValue: string) => {
     const parsed = Number(rawValue)
     const value = rawValue.trim() && Number.isFinite(parsed) && parsed > 0
       ? `${Math.round(parsed)}px`
       : null
-    editor.chain().focus().updateAttributes('image', { [dimension]: value }).run()
+    updateSelectedImageAttributes(editor, { [dimension]: value })
+  }
+
+  const keepImageToolbarOpen = () => {
+    editor.view.dispatch(editor.state.tr.setMeta('richTextBubbleMenu', 'show'))
   }
 
   return (
     <div className={cn(styles.quickToolbar, styles.imageQuickToolbar)} role="toolbar" aria-label="Image formatting">
       <ToolbarButton
         label="Rotate left"
-        onClick={() =>
-          editor.chain().focus().updateAttributes('image', { rotation: rotation - 90 }).run()
-        }
+        onClick={() => updateSelectedImageAttributes(editor, { rotation: rotation - 90 })}
       >
         <RotateCcw />
       </ToolbarButton>
       <ToolbarButton
         label="Rotate right"
-        onClick={() =>
-          editor.chain().focus().updateAttributes('image', { rotation: rotation + 90 }).run()
-        }
+        onClick={() => updateSelectedImageAttributes(editor, { rotation: rotation + 90 })}
       >
         <RotateCw />
       </ToolbarButton>
       <ToolbarButton
         label="Flip horizontal"
         active={Boolean(attrs.flipX)}
-        onClick={() =>
-          editor.chain().focus().updateAttributes('image', { flipX: !attrs.flipX }).run()
-        }
+        onClick={() => updateSelectedImageAttributes(editor, { flipX: !attrs.flipX })}
       >
         <FlipHorizontal2 />
       </ToolbarButton>
       <ToolbarButton
         label="Flip vertical"
         active={Boolean(attrs.flipY)}
-        onClick={() =>
-          editor.chain().focus().updateAttributes('image', { flipY: !attrs.flipY }).run()
-        }
+        onClick={() => updateSelectedImageAttributes(editor, { flipY: !attrs.flipY })}
       >
         <FlipVertical2 />
       </ToolbarButton>
       <label className={styles.imageSizeField}>
         W
         <input
-          key={`width-${width ?? 'auto'}`}
+          ref={widthInputRef}
           type="number"
           min="1"
           defaultValue={width}
           placeholder="Auto"
           aria-label="Image width in pixels"
+          onFocus={keepImageToolbarOpen}
           onKeyDown={(event) => {
             if (event.key === 'Enter') event.currentTarget.blur()
           }}
@@ -412,12 +464,13 @@ function ImageQuickToolbar({ editor }: Readonly<{ editor: Editor }>) {
       <label className={styles.imageSizeField}>
         H
         <input
-          key={`height-${height ?? 'auto'}`}
+          ref={heightInputRef}
           type="number"
           min="1"
           defaultValue={height}
           placeholder="Auto"
           aria-label="Image height in pixels"
+          onFocus={keepImageToolbarOpen}
           onKeyDown={(event) => {
             if (event.key === 'Enter') event.currentTarget.blur()
           }}
@@ -799,6 +852,7 @@ export function RichTextEditor({
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [sourceCodeOpen, setSourceCodeOpen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [imageDialogOpen, setImageDialogOpen] = useState(false)
   const [videoDialogOpen, setVideoDialogOpen] = useState(false)
   const [audioDialogOpen, setAudioDialogOpen] = useState(false)
   const [codeSampleDialog, setCodeSampleDialog] = useState<CodeSampleDialogState | null>(null)
@@ -970,18 +1024,33 @@ export function RichTextEditor({
     linkDialogOpen ||
     sourceCodeOpen ||
     previewOpen ||
+    imageDialogOpen ||
     videoDialogOpen ||
     audioDialogOpen ||
     codeSampleDialog !== null ||
     formulaDialog !== null
 
   const shouldShowBubbleMenu = useCallback(
-    ({ editor: currentEditor, from, to }: { editor: Editor; from: number; to: number }) => {
+    ({
+      editor: currentEditor,
+      element,
+      from,
+      to,
+    }: {
+      editor: Editor
+      element: HTMLElement
+      from: number
+      to: number
+    }) => {
       if (hasDialogOpen) return false
       const { selection } = currentEditor.state
-      if (selection instanceof NodeSelection) {
-        return selection.node.type.name === 'image'
+      if (selection instanceof NodeSelection && selection.node.type.name === 'image') {
+        // Keep the image toolbar while the node stays selected (including when
+        // focus is momentarily in W/H inputs inside this menu).
+        return true
       }
+      const menuFocused = element.contains(document.activeElement)
+      if (!currentEditor.view.hasFocus() && !menuFocused) return false
       return (
         from !== to &&
         !currentEditor.isActive('codeBlock') &&
@@ -1057,7 +1126,9 @@ export function RichTextEditor({
   const bubbleMenuOptions = useMemo(
     () => ({
       ...BUBBLE_MENU_OPTIONS,
-      hide: { strategy: 'referenceHidden' as const },
+      // TipTap still hides on Floating UI `escaped` even with
+      // strategy: 'referenceHidden', which dismisses the image toolbar after
+      // flip/rotate when the menu sits above an image near the scroll edge.
       ...(typeof window !== 'undefined'
         ? { scrollTarget: editorScrollRef.current ?? window }
         : {}),
@@ -1104,21 +1175,49 @@ export function RichTextEditor({
     }
   }, [isFullscreen])
 
-  const handleInsertImage = () => {
-    fileInputRef.current?.click()
+  const insertImage = (src: string) => {
+    editor?.chain().focus().setImage({ src }).run()
+  }
+
+  const handleSaveImageUrl = (url: string) => {
+    const trimmed = url.trim()
+    setImageDialogOpen(false)
+    if (trimmed) insertImage(trimmed)
   }
 
   const handleSetAlignment = (align: 'left' | 'center' | 'right') => {
     if (!editor) return
 
-    const chain = editor.chain().focus()
     const mediaType = getActiveMediaType(editor)
-    if (mediaType) {
-      chain.updateAttributes(mediaType, { align }).run()
+    if (mediaType === 'image') {
+      updateSelectedImageAttributes(editor, { align })
       return
     }
 
-    chain.setTextAlign(align).run()
+    if (mediaType) {
+      const { selection } = editor.state
+      if (selection instanceof NodeSelection && selection.node.type.name === mediaType) {
+        const pos = selection.from
+        editor
+          .chain()
+          .command(({ tr, dispatch }) => {
+            const node = tr.doc.nodeAt(pos)
+            if (!node || node.type.name !== mediaType) return false
+            if (dispatch) {
+              tr.setNodeMarkup(pos, undefined, { ...node.attrs, align })
+              tr.setSelection(NodeSelection.create(tr.doc, pos))
+            }
+            return true
+          })
+          .run()
+        if (!editor.view.hasFocus()) editor.view.focus()
+        return
+      }
+      editor.chain().focus().updateAttributes(mediaType, { align }).run()
+      return
+    }
+
+    editor.chain().focus().setTextAlign(align).run()
   }
 
   const handleImageSelected = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -1129,7 +1228,8 @@ export function RichTextEditor({
     try {
       const src = await readFileAsDataUrl(file)
       if (!src) return
-      editor.chain().focus().setImage({ src }).run()
+      setImageDialogOpen(false)
+      insertImage(src)
     } catch {
       // Ignore unreadable files; the editor stays unchanged.
     }
@@ -1268,11 +1368,6 @@ export function RichTextEditor({
 
   const insertAudio = (src: string) => {
     editor?.chain().focus().insertContent({ type: 'audio', attrs: { src } }).run()
-  }
-
-  const handleSaveAudioUrl = (url: string) => {
-    setAudioDialogOpen(false)
-    insertAudio(url.trim())
   }
 
   const handleAudioSelected = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -1691,7 +1786,7 @@ export function RichTextEditor({
 
         <ToolbarGroup>
           <TableSizePicker disabled={!editor} onSelect={handleInsertTable} />
-          <ToolbarButton label="Image" onClick={handleInsertImage}>
+          <ToolbarButton label="Image" disabled={!editor} onClick={() => setImageDialogOpen(true)}>
             <ImageIcon />
           </ToolbarButton>
           <ToolbarButton label="Video" disabled={!editor} onClick={() => setVideoDialogOpen(true)}>
@@ -1831,6 +1926,13 @@ export function RichTextEditor({
         onChange={handleAudioSelected}
       />
 
+      <ImageDialog
+        isOpen={imageDialogOpen}
+        onClose={() => setImageDialogOpen(false)}
+        onSave={handleSaveImageUrl}
+        onPickFile={() => fileInputRef.current?.click()}
+      />
+
       <VideoDialog
         isOpen={videoDialogOpen}
         onClose={() => setVideoDialogOpen(false)}
@@ -1841,7 +1943,6 @@ export function RichTextEditor({
       <AudioDialog
         isOpen={audioDialogOpen}
         onClose={() => setAudioDialogOpen(false)}
-        onSave={handleSaveAudioUrl}
         onPickFile={() => audioInputRef.current?.click()}
       />
 
