@@ -5,9 +5,9 @@ import { Table } from 'lucide-react'
 
 import { cn } from '@libs'
 
-import { IconDropdownMenu } from '../IconDropdownMenu'
+import { IconDropdownMenu } from '../../IconDropdownMenu'
 
-import styles from './styles/RichTextEditor.module.css'
+import styles from '../styles/RichTextEditor.module.css'
 
 const MAX_ROWS = 8
 const MAX_COLS = 8

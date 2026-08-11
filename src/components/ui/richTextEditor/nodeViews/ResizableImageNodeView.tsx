@@ -11,8 +11,8 @@ import {
   normalizeImageHeight,
   normalizeImageWidth,
   toImageWidthPx,
-} from './richTextImageExtension'
-import styles from './styles/ResizableImageNodeView.module.css'
+} from '../extensions/richTextImageExtension'
+import styles from '../styles/ResizableImageNodeView.module.css'
 
 type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se'
 

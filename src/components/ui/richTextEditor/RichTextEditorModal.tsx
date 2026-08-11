@@ -5,8 +5,9 @@ import { useState } from 'react'
 import { Button } from '../button'
 import { Dialog, dialogStyles } from '../Dialog'
 
-import { preventDismissForRichTextPortals } from './mathLiveKeyboard'
+import { preventDismissForRichTextPortals } from './utils/mathLiveKeyboard'
 import { RichTextEditor } from './RichTextEditor'
+import type { PluginId, ToolbarGroup } from './config'
 import styles from './styles/RichTextEditorModal.module.css'
 
 type RichTextEditorModalProps = Readonly<{
@@ -19,6 +20,8 @@ type RichTextEditorModalProps = Readonly<{
   onUploadVideo?: (file: File) => Promise<string>
   /** Forwarded to RichTextEditor — see its `onUploadAudio` prop. */
   onUploadAudio?: (file: File) => Promise<string>
+  plugins?: readonly PluginId[]
+  toolbar?: readonly ToolbarGroup[]
 }>
 
 export function RichTextEditorModal({
@@ -29,6 +32,8 @@ export function RichTextEditorModal({
   onSave,
   onUploadVideo,
   onUploadAudio,
+  plugins,
+  toolbar,
 }: RichTextEditorModalProps) {
   return (
     <Dialog
@@ -50,6 +55,8 @@ export function RichTextEditorModal({
         onSave={onSave}
         onUploadVideo={onUploadVideo}
         onUploadAudio={onUploadAudio}
+        plugins={plugins}
+        toolbar={toolbar}
       />
     </Dialog>
   )
@@ -61,7 +68,14 @@ function RichTextEditorModalBody({
   onSave,
   onUploadVideo,
   onUploadAudio,
-}: Readonly<Pick<RichTextEditorModalProps, 'value' | 'onClose' | 'onSave' | 'onUploadVideo' | 'onUploadAudio'>>) {
+  plugins,
+  toolbar,
+}: Readonly<
+  Pick<
+    RichTextEditorModalProps,
+    'value' | 'onClose' | 'onSave' | 'onUploadVideo' | 'onUploadAudio' | 'plugins' | 'toolbar'
+  >
+>) {
   const [draft, setDraft] = useState(value)
 
   return (
@@ -72,6 +86,8 @@ function RichTextEditorModalBody({
           onChange={setDraft}
           onUploadVideo={onUploadVideo}
           onUploadAudio={onUploadAudio}
+          plugins={plugins}
+          toolbar={toolbar}
         />
       </div>
       <div className={styles.actions}>

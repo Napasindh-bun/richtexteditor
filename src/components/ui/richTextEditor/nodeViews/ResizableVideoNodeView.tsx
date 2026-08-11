@@ -9,8 +9,8 @@ import {
   clampVideoWidthPercent,
   parseVideoAlign,
   MIN_VIDEO_WIDTH_PERCENT,
-} from './richTextVideoExtension'
-import styles from './styles/ResizableVideoNodeView.module.css'
+} from '../extensions/richTextVideoExtension'
+import styles from '../styles/ResizableVideoNodeView.module.css'
 
 type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se'
 

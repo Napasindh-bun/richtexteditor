@@ -7,107 +7,54 @@ import {
   useRef,
   useState,
   type ChangeEvent,
-  type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
 import { posToDOMRect } from '@tiptap/core'
-import { NodeSelection, TextSelection } from '@tiptap/pm/state'
+import { NodeSelection } from '@tiptap/pm/state'
 import { EditorContent, useEditor, type Editor } from '@tiptap/react'
 import { BubbleMenu } from '@tiptap/react/menus'
-import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
-import StarterKit from '@tiptap/starter-kit'
-import TextAlign from '@tiptap/extension-text-align'
-import { TextStyle, Color, FontSize } from '@tiptap/extension-text-style'
-import Highlight from '@tiptap/extension-highlight'
-import { TaskItem, TaskList } from '@tiptap/extension-list'
-import { Mathematics } from '@tiptap/extension-mathematics'
-import SuperscriptExtension from '@tiptap/extension-superscript'
-import SubscriptExtension from '@tiptap/extension-subscript'
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import 'katex/contrib/mhchem'
-import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
-  Bold,
-  Check,
-  Code2,
-  Eye,
-  FlaskConical,
-  FlipHorizontal2,
-  FlipVertical2,
-  Highlighter,
-  ImageIcon,
-  IndentDecrease,
-  IndentIncrease,
-  Italic,
-  Link2,
-  List,
-  ListCollapse,
-  ListChecks,
-  ListOrdered,
-  Maximize2,
-  Minimize2,
-  Paintbrush,
-  Volume2,
-  PenLine,
-  Redo2,
-  RemoveFormatting,
-  RotateCcw,
-  RotateCw,
-  Sigma,
-  SquareCode,
-  Strikethrough,
-  Subscript,
-  Superscript,
-  Underline as UnderlineIcon,
-  Undo2,
-  Video as VideoIcon,
-} from 'lucide-react'
 
 import { cn } from '@libs'
 import { resolveMathVariant } from '@utils/editor/richTextMath'
 
-import { IconDropdownMenu } from '../IconDropdownMenu'
-
-import { AudioDialog } from './AudioDialog'
-import { ImageDialog } from './ImageDialog'
-import { codeLowlight } from './codeSampleHighlight'
-import { CodeSampleDialog } from './CodeSampleDialog'
+import { AudioDialog } from './dialogs/AudioDialog'
+import { CodeSampleDialog } from './dialogs/CodeSampleDialog'
+import { ImageDialog } from './dialogs/ImageDialog'
+import { LinkDialog } from './dialogs/LinkDialog'
+import { MathLiveDialog, type MathLiveDialogVariant } from './dialogs/MathLiveDialog'
+import { PreviewDialog } from './dialogs/PreviewDialog'
+import { SourceCodeDialog } from './dialogs/SourceCodeDialog'
+import { TablePropertiesDialog } from './dialogs/TablePropertiesDialog'
+import { VideoDialog } from './dialogs/VideoDialog'
 import {
-  ColorPalettePicker,
-  HIGHLIGHT_COLORS,
-  TEXT_COLORS,
-} from './ColorPalettePicker'
-import { DoubleUnderline } from './doubleUnderlineExtension'
-import { LinkDialog } from './LinkDialog'
-import { LineHeight } from './lineHeightExtension'
-import { MathLiveDialog, type MathLiveDialogVariant } from './MathLiveDialog'
-import { ParagraphIndent } from './paragraphIndentExtension'
-import { PreviewDialog } from './PreviewDialog'
-import { RichTextAudio } from './richTextAudioExtension'
-import { RichTextImage } from './richTextImageExtension'
-import { parseVideoSource, RichTextVideo } from './richTextVideoExtension'
-import { SourceCodeDialog } from './SourceCodeDialog'
+  hasPlugin,
+  resolveEditorConfig,
+  type PluginId,
+  type ToolbarGroup,
+  type ToolbarItemId,
+} from './config'
+import { createEditorExtensions } from './extensions/createEditorExtensions'
 import {
   applyTableProperties,
   DEFAULT_TABLE_PROPERTIES,
   normalizeTableColumnWidths,
   readTableProperties,
-  StyledTable,
-  StyledTableCell,
-  StyledTableHeader,
-  StyledTableRow,
-  StyledTableView,
   type TablePropertiesValues,
-} from './styledTableCellExtension'
-import { TableContextMenu } from './TableContextMenu'
-import { TablePropertiesDialog } from './TablePropertiesDialog'
-import { TableRowResizeHandles } from './TableRowResizeHandles'
-import { TableSizePicker } from './TableSizePicker'
-import { TextCaseMenu } from './TextCaseMenu'
-import { applyTextCase } from './textCaseCommands'
-import { VideoDialog } from './VideoDialog'
+} from './extensions/styledTableCellExtension'
+import { TableContextMenu } from './table/TableContextMenu'
+import { TableRowResizeHandles } from './table/TableRowResizeHandles'
+import {
+  DEFAULT_FONT_SIZE_PX,
+  EditorToolbar,
+  getActiveFontSizePx,
+} from './toolbar/EditorToolbar'
+import { ImageQuickToolbar, updateSelectedImageAttributes } from './toolbar/ImageQuickToolbar'
+import { QuickToolbar } from './toolbar/QuickToolbar'
+import { findMathNodeAtPos } from './utils/findMathNodeAtPos'
+import { getElementPath, getTextStats } from './utils/editorStats'
+import { getActiveMediaType, getMediaAlignment } from './utils/mediaHelpers'
+import { useMediaDialogs } from './utils/useMediaDialogs'
 import contentStyles from './styles/RichTextContent.module.css'
 import styles from './styles/RichTextEditor.module.css'
 
@@ -122,14 +69,16 @@ type RichTextEditorProps = Readonly<{
   onUploadVideo?: (file: File) => Promise<string>
   /** Upload a picked audio file and resolve to its public URL. */
   onUploadAudio?: (file: File) => Promise<string>
-}>
-
-type ToolbarButtonProps = Readonly<{
-  label: string
-  active?: boolean
-  disabled?: boolean
-  onClick: () => void
-  children: ReactNode
+  /**
+   * TinyMCE-style capability list. Controls which TipTap extensions / dialogs
+   * are registered. Omitted = all defaults. Applied on editor mount.
+   */
+  plugins?: readonly PluginId[]
+  /**
+   * TinyMCE-style toolbar groups (each inner array is a button group).
+   * Items whose required plugin is off are skipped. Omitted = full default toolbar.
+   */
+  toolbar?: readonly ToolbarGroup[]
 }>
 
 type FormulaDialogState = Readonly<{
@@ -173,676 +122,17 @@ const BUBBLE_MENU_OPTIONS = {
   offset: 8,
 } as const
 
-
-function ToolbarButton({ label, active, disabled, onClick, children }: ToolbarButtonProps) {
-  return (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
-      aria-pressed={active}
-      disabled={disabled}
-      className={cn(styles.toolbarButton, active && styles.toolbarButtonActive)}
-      // Keep the ProseMirror selection intact while a toolbar command is clicked.
-      // Otherwise the button can take focus before `onClick`, causing block commands
-      // such as toggleTaskList to run at a stale/fallback document position.
-      onMouseDown={(event) => event.preventDefault()}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  )
-}
-
-function ToolbarDivider() {
-  return <span className={styles.divider} aria-hidden />
-}
-
-function ToolbarGroup({ children }: Readonly<{ children: ReactNode }>) {
-  return <div className={styles.toolbarGroup}>{children}</div>
-}
-
-function runTextDecoration(
-  editor: Editor,
-  name: 'underline' | 'doubleUnderline' | 'strike' | 'superscript' | 'subscript',
-) {
-  const chain = editor.chain().focus()
-  if (name === 'underline') {
-    chain.unsetMark('doubleUnderline').toggleUnderline().run()
-  } else if (name === 'doubleUnderline') {
-    chain.unsetUnderline().toggleDoubleUnderline().run()
-  } else if (name === 'superscript') {
-    chain.unsetSubscript().toggleSuperscript().run()
-  } else if (name === 'subscript') {
-    chain.unsetSuperscript().toggleSubscript().run()
-  } else {
-    chain.toggleStrike().run()
-  }
-}
-
-function clearFormatting(editor: Editor) {
-  editor.chain().focus().unsetAllMarks().clearNodes().run()
-}
-
-function TextDecorationMenu({ editor }: Readonly<{ editor: Editor | null }>) {
-  const items = [
-    { name: 'underline' as const, label: 'Underline', icon: <UnderlineIcon /> },
-    {
-      name: 'doubleUnderline' as const,
-      label: 'Double underline',
-      icon: <span className={styles.doubleUnderlineIcon}>U</span>,
-    },
-    { name: 'strike' as const, label: 'Strikethrough', icon: <Strikethrough /> },
-    { name: 'superscript' as const, label: 'Superscript', icon: <Superscript /> },
-    { name: 'subscript' as const, label: 'Subscript', icon: <Subscript /> },
-  ]
-  const active = items.some(({ name }) => editor?.isActive(name))
-
-  return (
-    <IconDropdownMenu
-      trigger={<UnderlineIcon />}
-      triggerLabel="Text decoration"
-      wrapperClassName={styles.textDecorationWrap}
-      triggerClassName={cn(styles.toolbarButton, active && styles.toolbarButtonActive)}
-      contentClassName={`${styles.menuDropdown} ${styles.textDecorationMenu}`}
-    >
-      {({ close }) =>
-        items.map((item) => (
-          <button
-            key={item.name}
-            type="button"
-            role="menuitemcheckbox"
-            aria-checked={Boolean(editor?.isActive(item.name))}
-            disabled={!editor}
-            className={styles.menuDropdownItem}
-            onClick={() => {
-              if (editor) runTextDecoration(editor, item.name)
-              close()
-            }}
-          >
-            <span className={styles.textCaseMenuLabel}>
-              {item.icon}
-              {item.label}
-            </span>
-            {editor?.isActive(item.name) ? <Check className={styles.menuItemCheck} /> : null}
-          </button>
-        ))
-      }
-    </IconDropdownMenu>
-  )
-}
-
-function QuickToolbar({
-  editor,
-  formatPainterActive,
-  onFormatPainter,
-  onOpenLink,
-  onOpenCodeSample,
-}: Readonly<{
-  editor: Editor
-  formatPainterActive: boolean
-  onFormatPainter: () => void
-  onOpenLink: () => void
-  onOpenCodeSample: () => void
-}>) {
-  return (
-    <div className={styles.quickToolbar} role="toolbar" aria-label="Quick formatting">
-      <ToolbarButton
-        label="Bold"
-        active={editor.isActive('bold')}
-        onClick={() => editor.chain().focus().toggleBold().run()}
-      >
-        <Bold />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Italic"
-        active={editor.isActive('italic')}
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-      >
-        <Italic />
-      </ToolbarButton>
-      <TextDecorationMenu editor={editor} />
-      <ToolbarButton label="Link" active={editor.isActive('link')} onClick={onOpenLink}>
-        <Link2 />
-      </ToolbarButton>
-      <ToolbarButton
-        label={formatPainterActive ? 'Cancel format painter' : 'Format painter'}
-        active={formatPainterActive}
-        onClick={onFormatPainter}
-      >
-        <Paintbrush />
-      </ToolbarButton>
-      <ToolbarButton label="Clear formatting" onClick={() => clearFormatting(editor)}>
-        <RemoveFormatting />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Code sample"
-        active={editor.isActive('codeBlock')}
-        onClick={onOpenCodeSample}
-      >
-        <SquareCode />
-      </ToolbarButton>
-    </div>
-  )
-}
-
-function getSelectedImagePixels(editor: Editor, dimension: 'width' | 'height'): number | undefined {
-  const { selection } = editor.state
-  if (!(selection instanceof NodeSelection) || selection.node.type.name !== 'image') return
-
-  const stored = String(selection.node.attrs[dimension] ?? '')
-  const pixelValue = /^(\d+(?:\.\d+)?)(?:px)?$/i.exec(stored)
-  if (pixelValue) return Math.round(Number(pixelValue[1]))
-
-  const nodeDom = editor.view.nodeDOM(selection.from)
-  const image =
-    nodeDom instanceof HTMLImageElement
-      ? nodeDom
-      : nodeDom instanceof HTMLElement
-        ? nodeDom.querySelector('img')
-        : null
-  const measured = dimension === 'width' ? image?.clientWidth : image?.clientHeight
-  return measured && measured > 0 ? Math.round(measured) : undefined
-}
-
-/**
- * Update the selected image while keeping NodeSelection. TipTap's
- * `chain().focus().updateAttributes()` can drop the node selection after a
- * React node-view re-render (flip/rotate), which dismisses the floating toolbar.
- */
-function updateSelectedImageAttributes(
-  editor: Editor,
-  attributes: Record<string, unknown>,
-): boolean {
-  const { selection } = editor.state
-  if (!(selection instanceof NodeSelection) || selection.node.type.name !== 'image') {
-    return false
-  }
-
-  const pos = selection.from
-  const applied = editor
-    .chain()
-    .command(({ tr, dispatch }) => {
-      const node = tr.doc.nodeAt(pos)
-      if (!node || node.type.name !== 'image') return false
-      if (dispatch) {
-        tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...attributes })
-        tr.setSelection(NodeSelection.create(tr.doc, pos))
-        // Keep the floating toolbar visible across the node-view re-render.
-        tr.setMeta('richTextBubbleMenu', 'show')
-      }
-      return true
-    })
-    .run()
-
-  if (applied && !editor.view.hasFocus()) {
-    editor.view.focus()
-  }
-
-  return applied
-}
-
-function ImageQuickToolbar({ editor }: Readonly<{ editor: Editor }>) {
-  const attrs = editor.getAttributes('image')
-  const width = getSelectedImagePixels(editor, 'width')
-  const height = getSelectedImagePixels(editor, 'height')
-  const rotation = Number(attrs.rotation) || 0
-  const widthInputRef = useRef<HTMLInputElement>(null)
-  const heightInputRef = useRef<HTMLInputElement>(null)
-
-  // Sync W/H with resize-handle changes without remounting the inputs.
-  useEffect(() => {
-    const widthInput = widthInputRef.current
-    if (widthInput && document.activeElement !== widthInput) {
-      widthInput.value = width != null ? String(width) : ''
-    }
-  }, [width])
-
-  useEffect(() => {
-    const heightInput = heightInputRef.current
-    if (heightInput && document.activeElement !== heightInput) {
-      heightInput.value = height != null ? String(height) : ''
-    }
-  }, [height])
-
-  const updateDimension = (dimension: 'width' | 'height', rawValue: string) => {
-    const parsed = Number(rawValue)
-    const value = rawValue.trim() && Number.isFinite(parsed) && parsed > 0
-      ? `${Math.round(parsed)}px`
-      : null
-    updateSelectedImageAttributes(editor, { [dimension]: value })
-  }
-
-  const keepImageToolbarOpen = () => {
-    editor.view.dispatch(editor.state.tr.setMeta('richTextBubbleMenu', 'show'))
-  }
-
-  return (
-    <div className={cn(styles.quickToolbar, styles.imageQuickToolbar)} role="toolbar" aria-label="Image formatting">
-      <ToolbarButton
-        label="Rotate left"
-        onClick={() => updateSelectedImageAttributes(editor, { rotation: rotation - 90 })}
-      >
-        <RotateCcw />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Rotate right"
-        onClick={() => updateSelectedImageAttributes(editor, { rotation: rotation + 90 })}
-      >
-        <RotateCw />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Flip horizontal"
-        active={Boolean(attrs.flipX)}
-        onClick={() => updateSelectedImageAttributes(editor, { flipX: !attrs.flipX })}
-      >
-        <FlipHorizontal2 />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Flip vertical"
-        active={Boolean(attrs.flipY)}
-        onClick={() => updateSelectedImageAttributes(editor, { flipY: !attrs.flipY })}
-      >
-        <FlipVertical2 />
-      </ToolbarButton>
-      <label className={styles.imageSizeField}>
-        W
-        <input
-          ref={widthInputRef}
-          type="number"
-          min="1"
-          defaultValue={width}
-          placeholder="Auto"
-          aria-label="Image width in pixels"
-          onFocus={keepImageToolbarOpen}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') event.currentTarget.blur()
-          }}
-          onBlur={(event) => updateDimension('width', event.currentTarget.value)}
-        />
-      </label>
-      <label className={styles.imageSizeField}>
-        H
-        <input
-          ref={heightInputRef}
-          type="number"
-          min="1"
-          defaultValue={height}
-          placeholder="Auto"
-          aria-label="Image height in pixels"
-          onFocus={keepImageToolbarOpen}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') event.currentTarget.blur()
-          }}
-          onBlur={(event) => updateDimension('height', event.currentTarget.value)}
-        />
-      </label>
-    </div>
-  )
-}
-
-const NODE_PATH_LABELS: Record<string, string> = {
-  doc: 'document',
-  paragraph: 'p',
-  bulletList: 'ul',
-  orderedList: 'ol',
-  taskList: 'ul',
-  taskItem: 'li',
-  listItem: 'li',
-  table: 'table',
-  tableRow: 'tr',
-  tableCell: 'td',
-  tableHeader: 'th',
-  image: 'img',
-  video: 'video',
-  audio: 'audio',
-  codeBlock: 'pre',
-  inlineMath: 'math',
-  blockMath: 'math',
-  hardBreak: 'br',
-  text: 'text',
-}
-
-function getElementPath(editor: Editor): string[] {
-  const { $from } = editor.state.selection
-  const path: string[] = []
-  for (let depth = 1; depth <= $from.depth; depth += 1) {
-    const name = $from.node(depth).type.name
-    path.push(NODE_PATH_LABELS[name] ?? name)
-  }
-  if (editor.isActive('image')) path.push('img')
-  if (editor.isActive('link')) path.push('a')
-  if (editor.isActive('bold')) path.push('strong')
-  if (editor.isActive('italic')) path.push('em')
-  if (editor.isActive('underline') || editor.isActive('doubleUnderline')) path.push('u')
-  if (editor.isActive('strike')) path.push('s')
-  if (editor.isActive('superscript')) path.push('sup')
-  if (editor.isActive('subscript')) path.push('sub')
-  return path
-}
-
-function getTextStats(editor: Editor): { words: number; chars: number } {
-  const text = editor.state.doc.textContent.replace(/\s+/g, ' ').trim()
-  if (!text) return { words: 0, chars: 0 }
-  return { words: text.split(' ').length, chars: text.length }
-}
-
-type MenuBarProps = Readonly<{
-  editor: Editor | null
-  isFullscreen: boolean
-  onInsertImage: () => void
-  onInsertVideo: () => void
-  onInsertAudio: () => void
-  onOpenLink: () => void
-  onInsertTable: () => void
-  onOpenTableProperties: () => void
-  onInsertMath: () => void
-  onInsertScience: () => void
-  onToggleFullscreen: () => void
-  onOpenPreview: () => void
-  onOpenSourceCode: () => void
-}>
-
-function MenuBar({
-  editor,
-  isFullscreen,
-  onInsertImage,
-  onInsertVideo,
-  onInsertAudio,
-  onOpenLink,
-  onInsertTable,
-  onOpenTableProperties,
-  onInsertMath,
-  onInsertScience,
-  onToggleFullscreen,
-  onOpenPreview,
-  onOpenSourceCode,
-}: MenuBarProps) {
-  const [openMenu, setOpenMenu] = useState<string | null>(null)
-  const menubarRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!openMenu) return
-    const onPointerDown = (event: PointerEvent) => {
-      if (!menubarRef.current?.contains(event.target as Node)) {
-        setOpenMenu(null)
-      }
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    return () => document.removeEventListener('pointerdown', onPointerDown)
-  }, [openMenu])
-
-  const run = (action: () => void) => {
-    action()
-    setOpenMenu(null)
-  }
-
-  const menus = [
-    {
-      id: 'edit',
-      label: 'Edit',
-      items: [
-        {
-          label: 'Undo',
-          shortcut: 'Ctrl+Z',
-          disabled: !editor?.can().undo(),
-          onClick: () => editor?.chain().focus().undo().run(),
-        },
-        {
-          label: 'Redo',
-          shortcut: 'Ctrl+Y',
-          disabled: !editor?.can().redo(),
-          onClick: () => editor?.chain().focus().redo().run(),
-        },
-        { type: 'separator' as const },
-        {
-          label: 'Select all',
-          shortcut: 'Ctrl+A',
-          onClick: () => {
-            if (!editor) return
-            const { doc } = editor.state
-            editor.view.dispatch(
-              editor.state.tr.setSelection(TextSelection.create(doc, 0, doc.content.size)),
-            )
-            editor.view.focus()
-          },
-        },
-      ],
-    },
-    {
-      id: 'insert',
-      label: 'Insert',
-      items: [
-        { label: 'Image…', onClick: onInsertImage },
-        { label: 'Video…', onClick: onInsertVideo },
-        { label: 'Audio…', onClick: onInsertAudio },
-        { label: 'Link…', onClick: onOpenLink },
-        { label: 'Table…', onClick: onInsertTable },
-        { type: 'separator' as const },
-        { label: 'Math formula…', onClick: onInsertMath },
-        { label: 'Science formula…', onClick: onInsertScience },
-      ],
-    },
-    {
-      id: 'view',
-      label: 'View',
-      items: [
-        { label: 'Preview…', onClick: onOpenPreview },
-        {
-          label: isFullscreen ? 'Exit fullscreen' : 'Fullscreen',
-          shortcut: 'Ctrl+Shift+F',
-          onClick: onToggleFullscreen,
-        },
-      ],
-    },
-    {
-      id: 'format',
-      label: 'Format',
-      items: [
-        {
-          label: 'Bold',
-          shortcut: 'Ctrl+B',
-          onClick: () => editor?.chain().focus().toggleBold().run(),
-        },
-        {
-          label: 'Italic',
-          shortcut: 'Ctrl+I',
-          onClick: () => editor?.chain().focus().toggleItalic().run(),
-        },
-        {
-          label: 'Underline',
-          shortcut: 'Ctrl+U',
-          onClick: () =>
-            editor?.chain().focus().unsetMark('doubleUnderline').toggleUnderline().run(),
-        },
-        {
-          label: 'Double underline',
-          onClick: () =>
-            editor?.chain().focus().unsetUnderline().toggleDoubleUnderline().run(),
-        },
-        { type: 'separator' as const },
-        {
-          label: 'lowercase',
-          onClick: () => {
-            if (editor) applyTextCase(editor, 'lowercase')
-          },
-        },
-        {
-          label: 'UPPERCASE',
-          onClick: () => {
-            if (editor) applyTextCase(editor, 'uppercase')
-          },
-        },
-        {
-          label: 'Title Case',
-          onClick: () => {
-            if (editor) applyTextCase(editor, 'titlecase')
-          },
-        },
-        { type: 'separator' as const },
-        {
-          label: 'Clear formatting',
-          onClick: () => {
-            if (editor) clearFormatting(editor)
-          },
-        },
-      ],
-    },
-    {
-      id: 'table',
-      label: 'Table',
-      items: [
-        { label: 'Insert table…', onClick: onInsertTable },
-        {
-          label: 'Table properties…',
-          disabled: !editor?.isActive('table'),
-          onClick: onOpenTableProperties,
-        },
-        { type: 'separator' as const },
-        {
-          label: 'Delete table',
-          disabled: !editor?.isActive('table'),
-          onClick: () => editor?.chain().focus().deleteTable().run(),
-        },
-      ],
-    },
-    {
-      id: 'tools',
-      label: 'Tools',
-      items: [
-        { label: 'Preview…', onClick: onOpenPreview },
-        { label: 'Source code…', onClick: onOpenSourceCode },
-      ],
-    },
-  ]
-
-  return (
-    <div ref={menubarRef} className={styles.menubar} role="menubar" aria-label="Editor menu">
-      {menus.map((menu) => (
-        <div key={menu.id} className={styles.menuItem}>
-          <button
-            type="button"
-            className={cn(styles.menuButton, openMenu === menu.id && styles.menuButtonOpen)}
-            aria-haspopup="menu"
-            aria-expanded={openMenu === menu.id}
-            onClick={() => setOpenMenu((prev) => (prev === menu.id ? null : menu.id))}
-            onMouseEnter={() => {
-              if (openMenu) setOpenMenu(menu.id)
-            }}
-          >
-            {menu.label}
-          </button>
-          {openMenu === menu.id ? (
-            <div className={styles.menuDropdown} role="menu">
-              {menu.items.map((item, index) => {
-                if ('type' in item && item.type === 'separator') {
-                  return <div key={`sep-${index}`} className={styles.menuDropdownSeparator} />
-                }
-                const entry = item as {
-                  label: string
-                  shortcut?: string
-                  disabled?: boolean
-                  onClick: () => void
-                }
-                return (
-                  <button
-                    key={entry.label}
-                    type="button"
-                    role="menuitem"
-                    disabled={entry.disabled}
-                    className={styles.menuDropdownItem}
-                    onClick={() => run(entry.onClick)}
-                  >
-                    <span>{entry.label}</span>
-                    {entry.shortcut ? (
-                      <span className={styles.menuDropdownShortcut}>{entry.shortcut}</span>
-                    ) : null}
-                  </button>
-                )
-              })}
-            </div>
-          ) : null}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      resolve(typeof reader.result === 'string' ? reader.result : '')
-    }
-    reader.onerror = () => reject(reader.error ?? new Error('Failed to read image'))
-    reader.readAsDataURL(file)
-  })
-}
-
-const FONT_SIZES_PX = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36] as const
-const DEFAULT_FONT_SIZE_PX = 16
-const LINE_HEIGHTS = ['normal', '1', '1.15', '1.5', '2', '2.5', '3'] as const
-
-function getActiveFontSizePx(editor: Editor): number {
-  const raw = editor.getAttributes('textStyle').fontSize as string | undefined
-  if (!raw) return DEFAULT_FONT_SIZE_PX
-  const parsed = Number.parseInt(raw, 10)
-  return Number.isFinite(parsed) ? parsed : DEFAULT_FONT_SIZE_PX
-}
-
-/** Media nodes carry their own `align` attribute instead of the TextAlign mark. */
-const MEDIA_NODE_TYPES = ['image', 'video', 'audio'] as const
-
-function getActiveMediaType(editor: Editor): (typeof MEDIA_NODE_TYPES)[number] | null {
-  return MEDIA_NODE_TYPES.find((type) => editor.isActive(type)) ?? null
-}
-
-function getMediaAlignment(editor: Editor): 'left' | 'center' | 'right' | null {
-  const mediaType = getActiveMediaType(editor)
-  if (!mediaType) return null
-
-  const align = editor.getAttributes(mediaType).align
-  return align === 'left' || align === 'center' || align === 'right' ? align : 'left'
-}
-
-function findMathNodeAtPos(
-  doc: ProseMirrorNode,
-  pos: number,
-): { node: ProseMirrorNode; pos: number; type: 'inlineMath' | 'blockMath' } | null {
-  const direct = doc.nodeAt(pos)
-  if (direct?.type.name === 'inlineMath' || direct?.type.name === 'blockMath') {
-    return { node: direct, pos, type: direct.type.name }
-  }
-
-  const $pos = doc.resolve(Math.min(Math.max(pos, 0), doc.content.size))
-  const before = $pos.nodeBefore
-  if (before?.type.name === 'inlineMath' || before?.type.name === 'blockMath') {
-    return {
-      node: before,
-      pos: $pos.pos - before.nodeSize,
-      type: before.type.name,
-    }
-  }
-  const next = $pos.nodeAfter
-  if (next?.type.name === 'inlineMath' || next?.type.name === 'blockMath') {
-    return { node: next, pos: $pos.pos, type: next.type.name }
-  }
-
-  return null
-}
-
 export function RichTextEditor({
   value,
   onChange,
   height = 420,
   onUploadVideo,
   onUploadAudio,
+  plugins: pluginsProp,
+  toolbar: toolbarProp,
 }: RichTextEditorProps) {
   const shellRef = useRef<HTMLDivElement>(null)
   const editorScrollRef = useRef<HTMLDivElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const videoInputRef = useRef<HTMLInputElement>(null)
-  const audioInputRef = useRef<HTMLInputElement>(null)
   const [formulaDialog, setFormulaDialog] = useState<FormulaDialogState | null>(null)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
   const [linkInitialUrl, setLinkInitialUrl] = useState('')
@@ -852,9 +142,6 @@ export function RichTextEditor({
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [sourceCodeOpen, setSourceCodeOpen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
-  const [imageDialogOpen, setImageDialogOpen] = useState(false)
-  const [videoDialogOpen, setVideoDialogOpen] = useState(false)
-  const [audioDialogOpen, setAudioDialogOpen] = useState(false)
   const [codeSampleDialog, setCodeSampleDialog] = useState<CodeSampleDialogState | null>(null)
   const [formatPainterActive, setFormatPainterActive] = useState(false)
   const linkSelectionRef = useRef<{ from: number; to: number; wasLink: boolean } | null>(null)
@@ -862,6 +149,20 @@ export function RichTextEditor({
   const openCodeSampleRef = useRef<(state: CodeSampleDialogState) => void>(() => {})
   const formatPainterRef = useRef<FormatPainterSnapshot | null>(null)
   const applyFormatPainterRef = useRef<() => void>(() => {})
+
+  const editorConfig = useMemo(
+    () => resolveEditorConfig({ plugins: pluginsProp, toolbar: toolbarProp }),
+    [pluginsProp, toolbarProp],
+  )
+  const { plugins, toolbar } = editorConfig
+  const toolbarItemSet = useMemo(() => {
+    const items = new Set<ToolbarItemId>()
+    for (const group of toolbar) {
+      for (const item of group) items.add(item)
+    }
+    return items
+  }, [toolbar])
+  const extensions = useMemo(() => createEditorExtensions(plugins), [plugins])
 
   useEffect(() => {
     openFormulaEditorRef.current = setFormulaDialog
@@ -871,55 +172,7 @@ export function RichTextEditor({
   const editor = useEditor({
     immediatelyRender: false,
     shouldRerenderOnTransaction: true,
-    extensions: [
-      StarterKit.configure({
-        heading: false,
-        codeBlock: false,
-        // StarterKit v3 ships Link + Underline — configure here instead of adding them again.
-        link: {
-          openOnClick: false,
-          HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
-        },
-      }),
-      DoubleUnderline,
-      SuperscriptExtension,
-      SubscriptExtension,
-      TextStyle,
-      FontSize,
-      Color,
-      Highlight.configure({ multicolor: true }),
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      LineHeight,
-      ParagraphIndent,
-      CodeBlockLowlight.configure({ lowlight: codeLowlight }),
-      // TinyMCE treats images as inline atoms: they can be dragged between
-      // characters and the caret can continue immediately after them.
-      RichTextImage.configure({ allowBase64: true, inline: true }),
-      RichTextVideo,
-      RichTextAudio,
-      // TipTap built-in column resize (prosemirror-tables columnResizing).
-      // `View` is forwarded to columnResizing — the only way table attributes
-      // reach the editor DOM while resizing is on.
-      StyledTable.configure({
-        resizable: true,
-        handleWidth: 5,
-        cellMinWidth: 48,
-        lastColumnResizable: true,
-        renderWrapper: true,
-        View: StyledTableView,
-      }),
-      StyledTableRow,
-      StyledTableHeader,
-      StyledTableCell,
-      TextAlign.configure({
-        types: ['paragraph'],
-        alignments: ['left', 'center', 'right'],
-      }),
-      Mathematics.configure({
-        katexOptions: { throwOnError: false },
-      }),
-    ],
+    extensions,
     content: value,
     editorProps: {
       attributes: {
@@ -936,22 +189,26 @@ export function RichTextEditor({
           const target = event.target
           if (!(target instanceof Element)) return false
 
-          const codeElement = target.closest<HTMLElement>('pre')
-          if (codeElement && view.dom.contains(codeElement)) {
-            const domPos = view.posAtDOM(codeElement, 0)
-            const $codePos = view.state.doc.resolve(Math.min(domPos, view.state.doc.content.size))
-            for (let depth = $codePos.depth; depth > 0; depth -= 1) {
-              const codeNode = $codePos.node(depth)
-              if (codeNode.type.name !== 'codeBlock') continue
-              event.preventDefault()
-              openCodeSampleRef.current({
-                code: codeNode.textContent,
-                language: String(codeNode.attrs.language ?? 'plaintext'),
-                editPos: $codePos.before(depth),
-              })
-              return true
+          if (hasPlugin(plugins, 'codeSample')) {
+            const codeElement = target.closest<HTMLElement>('pre')
+            if (codeElement && view.dom.contains(codeElement)) {
+              const domPos = view.posAtDOM(codeElement, 0)
+              const $codePos = view.state.doc.resolve(Math.min(domPos, view.state.doc.content.size))
+              for (let depth = $codePos.depth; depth > 0; depth -= 1) {
+                const codeNode = $codePos.node(depth)
+                if (codeNode.type.name !== 'codeBlock') continue
+                event.preventDefault()
+                openCodeSampleRef.current({
+                  code: codeNode.textContent,
+                  language: String(codeNode.attrs.language ?? 'plaintext'),
+                  editPos: $codePos.before(depth),
+                })
+                return true
+              }
             }
           }
+
+          if (!hasPlugin(plugins, 'math') && !hasPlugin(plugins, 'science')) return false
 
           const mathEl = target.closest<HTMLElement>(
             '[data-type="inline-math"], [data-type="block-math"]',
@@ -966,8 +223,14 @@ export function RichTextEditor({
           const found = findMathNodeAtPos(view.state.doc, domPos)
           if (!found) return false
 
+          const variant = resolveMathVariant(latex || found.node.attrs.latex || '')
+          if (variant === 'science' && !hasPlugin(plugins, 'science')) return false
+          if (variant === 'math' && !hasPlugin(plugins, 'math') && !hasPlugin(plugins, 'science')) {
+            return false
+          }
+
           openFormulaEditorRef.current({
-            variant: resolveMathVariant(latex || found.node.attrs.latex || ''),
+            variant,
             initialLatex: latex || String(found.node.attrs.latex ?? ''),
             editPos: found.pos,
             editType: found.type,
@@ -980,6 +243,23 @@ export function RichTextEditor({
       onChange(nextEditor.getHTML())
     },
   })
+
+  const {
+    imageDialogOpen,
+    videoDialogOpen,
+    audioDialogOpen,
+    setImageDialogOpen,
+    setVideoDialogOpen,
+    setAudioDialogOpen,
+    fileInputRef,
+    videoInputRef,
+    audioInputRef,
+    handleSaveImageUrl,
+    handleImageSelected,
+    handleSaveVideoUrl,
+    handleVideoSelected,
+    handleAudioSelected,
+  } = useMediaDialogs({ editor, onUploadVideo, onUploadAudio })
 
   /**
    * Stamp the rendered column widths onto every cell once the browser has laid
@@ -1175,16 +455,6 @@ export function RichTextEditor({
     }
   }, [isFullscreen])
 
-  const insertImage = (src: string) => {
-    editor?.chain().focus().setImage({ src }).run()
-  }
-
-  const handleSaveImageUrl = (url: string) => {
-    const trimmed = url.trim()
-    setImageDialogOpen(false)
-    if (trimmed) insertImage(trimmed)
-  }
-
   const handleSetAlignment = (align: 'left' | 'center' | 'right') => {
     if (!editor) return
 
@@ -1218,46 +488,6 @@ export function RichTextEditor({
     }
 
     editor.chain().focus().setTextAlign(align).run()
-  }
-
-  const handleImageSelected = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file || !editor) return
-
-    try {
-      const src = await readFileAsDataUrl(file)
-      if (!src) return
-      setImageDialogOpen(false)
-      insertImage(src)
-    } catch {
-      // Ignore unreadable files; the editor stays unchanged.
-    }
-  }
-
-  const insertVideo = (src: string, provider: 'file' | 'youtube') => {
-    editor?.chain().focus().insertContent({ type: 'video', attrs: { src, provider } }).run()
-  }
-
-  const handleSaveVideoUrl = (url: string) => {
-    const source = parseVideoSource(url)
-    setVideoDialogOpen(false)
-    if (source) insertVideo(source.src, source.provider)
-  }
-
-  const handleVideoSelected = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file || !editor) return
-
-    try {
-      const src = onUploadVideo ? await onUploadVideo(file) : await readFileAsDataUrl(file)
-      if (!src) return
-      setVideoDialogOpen(false)
-      insertVideo(src, 'file')
-    } catch {
-      // Upload failed or the file is unreadable; the editor stays unchanged.
-    }
   }
 
   const handleOpenLinkDialog = () => {
@@ -1364,25 +594,6 @@ export function RichTextEditor({
       return
     }
     chain.setFontSize(`${nextPx}px`).run()
-  }
-
-  const insertAudio = (src: string) => {
-    editor?.chain().focus().insertContent({ type: 'audio', attrs: { src } }).run()
-  }
-
-  const handleAudioSelected = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file || !editor) return
-
-    try {
-      const src = onUploadAudio ? await onUploadAudio(file) : await readFileAsDataUrl(file)
-      if (!src) return
-      setAudioDialogOpen(false)
-      insertAudio(src)
-    } catch {
-      // Upload failed or the file is unreadable; the editor stays unchanged.
-    }
   }
 
   const captureFormatPainter = () => {
@@ -1564,284 +775,34 @@ export function RichTextEditor({
       style={isFullscreen ? undefined : { height }}
       data-rte-fullscreen={isFullscreen ? '' : undefined}
     >
-      <div className={styles.toolbar} role="toolbar" aria-label="Formatting">
-        <ToolbarGroup>
-          <ToolbarButton
-            label="Undo"
-            disabled={!editor?.can().undo()}
-            onClick={() => editor?.chain().focus().undo().run()}
-          >
-            <Undo2 />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Redo"
-            disabled={!editor?.can().redo()}
-            onClick={() => editor?.chain().focus().redo().run()}
-          >
-            <Redo2 />
-          </ToolbarButton>
-        </ToolbarGroup>
-
-        <ToolbarDivider />
-
-        <ToolbarGroup>
-          <select
-            className={styles.blockSelect}
-            aria-label="Font size"
-            value={fontSizeValue}
-            disabled={!editor}
-            onChange={handleFontSizeChange}
-          >
-            {FONT_SIZES_PX.map((size) => (
-              <option key={size} value={size}>
-                {size}px
-              </option>
-            ))}
-          </select>
-          <IconDropdownMenu
-            trigger={<ListCollapse />}
-            triggerLabel="Line height"
-            wrapperClassName={styles.lineHeightWrap}
-            triggerClassName={cn(
-              styles.toolbarButton,
-              lineHeightValue !== 'normal' && styles.toolbarButtonActive,
-              !editor && styles.toolbarButtonDisabled,
-            )}
-            contentClassName={`${styles.menuDropdown} ${styles.lineHeightMenu}`}
-          >
-            {({ close }) =>
-              LINE_HEIGHTS.map((lineHeight) => (
-                <button
-                  key={lineHeight}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={lineHeightValue === lineHeight}
-                  disabled={!editor}
-                  className={styles.menuDropdownItem}
-                  onClick={() => {
-                    handleLineHeightChange(lineHeight)
-                    close()
-                  }}
-                >
-                  <span>{lineHeight === 'normal' ? 'Default' : lineHeight}</span>
-                  {lineHeightValue === lineHeight ? <Check /> : null}
-                </button>
-              ))
-            }
-          </IconDropdownMenu>
-        </ToolbarGroup>
-
-        <ToolbarDivider />
-
-        <ToolbarGroup>
-          <ToolbarButton
-            label="Bold"
-            active={editor?.isActive('bold')}
-            onClick={() => editor?.chain().focus().toggleBold().run()}
-          >
-            <Bold />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Italic"
-            active={editor?.isActive('italic')}
-            onClick={() => editor?.chain().focus().toggleItalic().run()}
-          >
-            <Italic />
-          </ToolbarButton>
-          <TextDecorationMenu editor={editor} />
-          <ColorPalettePicker
-            label="Text color"
-            disabled={!editor}
-            colors={TEXT_COLORS}
-            activeColor={(editor?.getAttributes('textStyle').color as string | undefined) ?? null}
-            outlineLightSwatches
-            onSelect={(color) => editor?.chain().focus().setColor(color).run()}
-            onClear={() => editor?.chain().focus().unsetColor().run()}
-            trigger={
-              <span className={styles.colorTriggerIcon}>
-                <PenLine />
-                <span
-                  className={styles.colorTriggerBar}
-                  style={{
-                    backgroundColor:
-                      (editor?.getAttributes('textStyle').color as string | undefined) ||
-                      '#111827',
-                  }}
-                />
-              </span>
-            }
-          />
-          <TextCaseMenu editor={editor} />
-          <ToolbarButton
-            label={formatPainterActive ? 'Cancel format painter' : 'Format painter'}
-            active={formatPainterActive}
-            disabled={!editor}
-            onClick={captureFormatPainter}
-          >
-            <Paintbrush />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Clear formatting"
-            disabled={!editor}
-            onClick={() => {
-              if (editor) clearFormatting(editor)
-            }}
-          >
-            <RemoveFormatting />
-          </ToolbarButton>
-          <ColorPalettePicker
-            label="Highlight color"
-            disabled={!editor}
-            colors={HIGHLIGHT_COLORS}
-            activeColor={(editor?.getAttributes('highlight').color as string | undefined) ?? null}
-            onSelect={(color) => editor?.chain().focus().setHighlight({ color }).run()}
-            onClear={() => editor?.chain().focus().unsetHighlight().run()}
-            trigger={
-              <span className={styles.colorTriggerIcon}>
-                <Highlighter />
-                <span
-                  className={styles.colorTriggerBar}
-                  style={{
-                    backgroundColor:
-                      (editor?.getAttributes('highlight').color as string | undefined) ||
-                      '#fef08a',
-                  }}
-                />
-              </span>
-            }
-          />
-        </ToolbarGroup>
-
-        <ToolbarDivider />
-
-        <ToolbarGroup>
-          <ToolbarButton
-            label="Decrease indent"
-            disabled={!canIndent('decrease')}
-            onClick={() => handleIndent('decrease')}
-          >
-            <IndentDecrease />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Increase indent"
-            disabled={!canIndent('increase')}
-            onClick={() => handleIndent('increase')}
-          >
-            <IndentIncrease />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Bullet list"
-            active={editor?.isActive('bulletList')}
-            onClick={() => editor?.chain().focus().toggleBulletList().run()}
-          >
-            <List />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Numbered list"
-            active={editor?.isActive('orderedList')}
-            onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-          >
-            <ListOrdered />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Task list"
-            active={editor?.isActive('taskList')}
-            onClick={() => editor?.chain().focus().toggleTaskList().run()}
-          >
-            <ListChecks />
-          </ToolbarButton>
-        </ToolbarGroup>
-
-        <ToolbarDivider />
-
-        <ToolbarGroup>
-          <ToolbarButton
-            label="Align left"
-            active={mediaAlignment ? mediaAlignment === 'left' : editor?.isActive({ textAlign: 'left' })}
-            onClick={() => handleSetAlignment('left')}
-          >
-            <AlignLeft />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Align center"
-            active={
-              mediaAlignment ? mediaAlignment === 'center' : editor?.isActive({ textAlign: 'center' })
-            }
-            onClick={() => handleSetAlignment('center')}
-          >
-            <AlignCenter />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Align right"
-            active={
-              mediaAlignment ? mediaAlignment === 'right' : editor?.isActive({ textAlign: 'right' })
-            }
-            onClick={() => handleSetAlignment('right')}
-          >
-            <AlignRight />
-          </ToolbarButton>
-        </ToolbarGroup>
-
-        <ToolbarDivider />
-
-        <ToolbarGroup>
-          <TableSizePicker disabled={!editor} onSelect={handleInsertTable} />
-          <ToolbarButton label="Image" disabled={!editor} onClick={() => setImageDialogOpen(true)}>
-            <ImageIcon />
-          </ToolbarButton>
-          <ToolbarButton label="Video" disabled={!editor} onClick={() => setVideoDialogOpen(true)}>
-            <VideoIcon />
-          </ToolbarButton>
-          <ToolbarButton label="Audio" disabled={!editor} onClick={() => setAudioDialogOpen(true)}>
-            <Volume2 />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Link"
-            active={editor?.isActive('link')}
-            onClick={handleOpenLinkDialog}
-          >
-            <Link2 />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Math formula"
-            onClick={() => setFormulaDialog({ variant: 'math', initialLatex: '' })}
-          >
-            <Sigma />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Science formula"
-            onClick={() => setFormulaDialog({ variant: 'science', initialLatex: '' })}
-          >
-            <FlaskConical />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Code sample"
-            active={editor?.isActive('codeBlock')}
-            disabled={!editor}
-            onClick={openCodeSampleDialog}
-          >
-            <SquareCode />
-          </ToolbarButton>
-        </ToolbarGroup>
-
-        <ToolbarDivider />
-
-        <ToolbarGroup>
-          <ToolbarButton label="Preview" disabled={!editor} onClick={() => setPreviewOpen(true)}>
-            <Eye />
-          </ToolbarButton>
-          <ToolbarButton label="Source code" disabled={!editor} onClick={() => setSourceCodeOpen(true)}>
-            <Code2 />
-          </ToolbarButton>
-          <ToolbarButton
-            label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-            active={isFullscreen}
-            onClick={() => setIsFullscreen((previous) => !previous)}
-          >
-            {isFullscreen ? <Minimize2 /> : <Maximize2 />}
-          </ToolbarButton>
-        </ToolbarGroup>
-      </div>
+      <EditorToolbar
+        toolbar={toolbar}
+        editor={editor}
+        isFullscreen={isFullscreen}
+        formatPainterActive={formatPainterActive}
+        fontSizeValue={fontSizeValue}
+        lineHeightValue={lineHeightValue}
+        mediaAlignment={mediaAlignment}
+        canIndent={canIndent}
+        onUndo={() => editor?.chain().focus().undo().run()}
+        onRedo={() => editor?.chain().focus().redo().run()}
+        onFontSizeChange={handleFontSizeChange}
+        onLineHeightChange={handleLineHeightChange}
+        onFormatPainter={captureFormatPainter}
+        onIndent={handleIndent}
+        onSetAlignment={handleSetAlignment}
+        onInsertTable={handleInsertTable}
+        onInsertImage={() => setImageDialogOpen(true)}
+        onInsertVideo={() => setVideoDialogOpen(true)}
+        onInsertAudio={() => setAudioDialogOpen(true)}
+        onOpenLink={handleOpenLinkDialog}
+        onInsertMath={() => setFormulaDialog({ variant: 'math', initialLatex: '' })}
+        onInsertScience={() => setFormulaDialog({ variant: 'science', initialLatex: '' })}
+        onOpenCodeSample={openCodeSampleDialog}
+        onOpenPreview={() => setPreviewOpen(true)}
+        onOpenSourceCode={() => setSourceCodeOpen(true)}
+        onToggleFullscreen={() => setIsFullscreen((previous) => !previous)}
+      />
 
       {editor ? (
         <>
@@ -1853,11 +814,14 @@ export function RichTextEditor({
             getReferencedVirtualElement={getBubbleMenuReference}
           >
             {editor.state.selection instanceof NodeSelection &&
-            editor.state.selection.node.type.name === 'image' ? (
+            editor.state.selection.node.type.name === 'image' &&
+            hasPlugin(plugins, 'image') ? (
               <ImageQuickToolbar editor={editor} />
             ) : (
               <QuickToolbar
                 editor={editor}
+                plugins={plugins}
+                toolbarItems={toolbarItemSet}
                 formatPainterActive={formatPainterActive}
                 onFormatPainter={captureFormatPainter}
                 onOpenLink={handleOpenLinkDialog}
@@ -1891,7 +855,7 @@ export function RichTextEditor({
         </div>
       </div>
 
-      {editor && !hasDialogOpen ? (
+      {editor && !hasDialogOpen && hasPlugin(plugins, 'table') ? (
         <>
           <TableRowResizeHandles editor={editor} containerRef={shellRef} />
           <TableContextMenu
@@ -1902,72 +866,90 @@ export function RichTextEditor({
         </>
       ) : null}
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className={styles.hiddenInput}
-        onChange={handleImageSelected}
-      />
+      {hasPlugin(plugins, 'image') ? (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className={styles.hiddenInput}
+          onChange={handleImageSelected}
+        />
+      ) : null}
 
-      <input
-        ref={videoInputRef}
-        type="file"
-        accept="video/*"
-        className={styles.hiddenInput}
-        onChange={handleVideoSelected}
-      />
+      {hasPlugin(plugins, 'video') ? (
+        <input
+          ref={videoInputRef}
+          type="file"
+          accept="video/*"
+          className={styles.hiddenInput}
+          onChange={handleVideoSelected}
+        />
+      ) : null}
 
-      <input
-        ref={audioInputRef}
-        type="file"
-        accept="audio/*"
-        className={styles.hiddenInput}
-        onChange={handleAudioSelected}
-      />
+      {hasPlugin(plugins, 'audio') ? (
+        <input
+          ref={audioInputRef}
+          type="file"
+          accept="audio/*"
+          className={styles.hiddenInput}
+          onChange={handleAudioSelected}
+        />
+      ) : null}
 
-      <ImageDialog
-        isOpen={imageDialogOpen}
-        onClose={() => setImageDialogOpen(false)}
-        onSave={handleSaveImageUrl}
-        onPickFile={() => fileInputRef.current?.click()}
-      />
+      {hasPlugin(plugins, 'image') ? (
+        <ImageDialog
+          isOpen={imageDialogOpen}
+          onClose={() => setImageDialogOpen(false)}
+          onSave={handleSaveImageUrl}
+          onPickFile={() => fileInputRef.current?.click()}
+        />
+      ) : null}
 
-      <VideoDialog
-        isOpen={videoDialogOpen}
-        onClose={() => setVideoDialogOpen(false)}
-        onSave={handleSaveVideoUrl}
-        onPickFile={() => videoInputRef.current?.click()}
-      />
+      {hasPlugin(plugins, 'video') ? (
+        <VideoDialog
+          isOpen={videoDialogOpen}
+          onClose={() => setVideoDialogOpen(false)}
+          onSave={handleSaveVideoUrl}
+          onPickFile={() => videoInputRef.current?.click()}
+        />
+      ) : null}
 
-      <AudioDialog
-        isOpen={audioDialogOpen}
-        onClose={() => setAudioDialogOpen(false)}
-        onPickFile={() => audioInputRef.current?.click()}
-      />
+      {hasPlugin(plugins, 'audio') ? (
+        <AudioDialog
+          isOpen={audioDialogOpen}
+          onClose={() => setAudioDialogOpen(false)}
+          onPickFile={() => audioInputRef.current?.click()}
+        />
+      ) : null}
 
-      <CodeSampleDialog
-        isOpen={codeSampleDialog !== null}
-        initialCode={codeSampleDialog?.code ?? ''}
-        initialLanguage={codeSampleDialog?.language ?? 'plaintext'}
-        onClose={() => setCodeSampleDialog(null)}
-        onSave={saveCodeSample}
-      />
+      {hasPlugin(plugins, 'codeSample') ? (
+        <CodeSampleDialog
+          isOpen={codeSampleDialog !== null}
+          initialCode={codeSampleDialog?.code ?? ''}
+          initialLanguage={codeSampleDialog?.language ?? 'plaintext'}
+          onClose={() => setCodeSampleDialog(null)}
+          onSave={saveCodeSample}
+        />
+      ) : null}
 
-      <MathLiveDialog
-        isOpen={formulaDialog !== null}
-        variant={formulaDialog?.variant ?? 'math'}
-        initialLatex={formulaDialog?.initialLatex ?? ''}
-        onClose={() => setFormulaDialog(null)}
-        onInsert={handleInsertMath}
-      />
+      {hasPlugin(plugins, 'math') || hasPlugin(plugins, 'science') ? (
+        <MathLiveDialog
+          isOpen={formulaDialog !== null}
+          variant={formulaDialog?.variant ?? 'math'}
+          initialLatex={formulaDialog?.initialLatex ?? ''}
+          onClose={() => setFormulaDialog(null)}
+          onInsert={handleInsertMath}
+        />
+      ) : null}
 
-      <LinkDialog
-        isOpen={linkDialogOpen}
-        initialUrl={linkInitialUrl}
-        onClose={handleCloseLinkDialog}
-        onSave={handleSaveLink}
-      />
+      {hasPlugin(plugins, 'link') ? (
+        <LinkDialog
+          isOpen={linkDialogOpen}
+          initialUrl={linkInitialUrl}
+          onClose={handleCloseLinkDialog}
+          onSave={handleSaveLink}
+        />
+      ) : null}
 
       <SourceCodeDialog
         isOpen={sourceCodeOpen}
@@ -1982,12 +964,14 @@ export function RichTextEditor({
         onClose={() => setPreviewOpen(false)}
       />
 
-      <TablePropertiesDialog
-        isOpen={tablePropertiesOpen}
-        initialValues={tablePropertiesInitial}
-        onClose={() => setTablePropertiesOpen(false)}
-        onSave={handleSaveTableProperties}
-      />
+      {hasPlugin(plugins, 'table') ? (
+        <TablePropertiesDialog
+          isOpen={tablePropertiesOpen}
+          initialValues={tablePropertiesInitial}
+          onClose={() => setTablePropertiesOpen(false)}
+          onSave={handleSaveTableProperties}
+        />
+      ) : null}
     </div>
   )
 

@@ -2,7 +2,7 @@ import Image from '@tiptap/extension-image'
 import { NodeSelection, Plugin, TextSelection } from '@tiptap/pm/state'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 
-import { ResizableImageNodeView } from './ResizableImageNodeView'
+import { ResizableImageNodeView } from '../nodeViews/ResizableImageNodeView'
 
 /** Smallest width a user can drag an image down to. */
 export const MIN_IMAGE_WIDTH_PX = 24

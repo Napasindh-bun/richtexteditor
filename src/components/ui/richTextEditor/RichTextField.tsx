@@ -7,6 +7,7 @@ import { hasRichTextContent } from '@utils/editor/richText'
 
 import { RichTextEditorModal } from './RichTextEditorModal'
 import { RichTextHtmlPreview } from './RichTextHtmlPreview'
+import type { PluginId, ToolbarGroup } from './config'
 import styles from './styles/RichTextField.module.css'
 
 type RichTextFieldProps = Readonly<{
@@ -30,6 +31,8 @@ type RichTextFieldProps = Readonly<{
   onUploadVideo?: (file: File) => Promise<string>
   /** Forwarded to RichTextEditor — see its `onUploadAudio` prop. */
   onUploadAudio?: (file: File) => Promise<string>
+  plugins?: readonly PluginId[]
+  toolbar?: readonly ToolbarGroup[]
 }>
 
 /**
@@ -51,6 +54,8 @@ export function RichTextField({
   previewClassName,
   onUploadVideo,
   onUploadAudio,
+  plugins,
+  toolbar,
 }: RichTextFieldProps) {
   const emptyLabel = placeholder || label
   const hasContent = hasRichTextContent(value, plainText)
@@ -104,6 +109,8 @@ export function RichTextField({
         onSave={onSave}
         onUploadVideo={onUploadVideo}
         onUploadAudio={onUploadAudio}
+        plugins={plugins}
+        toolbar={toolbar}
       />
     </div>
   )

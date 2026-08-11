@@ -2,11 +2,11 @@
 
 import { useEffect, useId, useState } from 'react'
 
-import { Button } from '../button'
-import { Dialog, dialogStyles } from '../Dialog'
-import { Label } from '../label'
+import { Button } from '../../button'
+import { Dialog, dialogStyles } from '../../Dialog'
+import { Label } from '../../label'
 
-import styles from './styles/CodeSampleDialog.module.css'
+import styles from '../styles/CodeSampleDialog.module.css'
 
 export const CODE_LANGUAGES = [
   ['plaintext', 'Plain text'],

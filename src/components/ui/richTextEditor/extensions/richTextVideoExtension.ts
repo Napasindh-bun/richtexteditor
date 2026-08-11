@@ -1,7 +1,7 @@
 import { mergeAttributes, Node } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 
-import { ResizableVideoNodeView } from './ResizableVideoNodeView'
+import { ResizableVideoNodeView } from '../nodeViews/ResizableVideoNodeView'
 
 export type VideoProvider = 'file' | 'youtube'
 

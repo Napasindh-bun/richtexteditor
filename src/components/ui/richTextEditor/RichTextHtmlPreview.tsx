@@ -5,7 +5,7 @@ import { useMemo } from 'react'
 import { cn } from '@libs'
 import { htmlWithRenderedMath } from '@utils/editor/richTextMath'
 
-import { htmlWithHighlightedCode } from './codeSampleHighlight'
+import { htmlWithHighlightedCode } from './utils/codeSampleHighlight'
 import contentStyles from './styles/RichTextContent.module.css'
 import styles from './styles/RichTextHtmlPreview.module.css'
 

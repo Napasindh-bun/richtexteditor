@@ -1,10 +1,10 @@
 'use client'
 
-import { Button } from '../button'
-import { Dialog, dialogStyles } from '../Dialog'
+import { Button } from '../../button'
+import { Dialog, dialogStyles } from '../../Dialog'
 
-import { RichTextHtmlPreview } from './RichTextHtmlPreview'
-import styles from './styles/PreviewDialog.module.css'
+import { RichTextHtmlPreview } from '../RichTextHtmlPreview'
+import styles from '../styles/PreviewDialog.module.css'
 
 type PreviewDialogProps = Readonly<{
   isOpen: boolean

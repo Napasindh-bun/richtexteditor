@@ -3,12 +3,12 @@
 import { useEffect, useId, useState } from 'react'
 import { Upload } from 'lucide-react'
 
-import { Button } from '../button'
-import { Dialog, dialogStyles } from '../Dialog'
-import { Input } from '../input'
-import { Label } from '../label'
+import { Button } from '../../button'
+import { Dialog, dialogStyles } from '../../Dialog'
+import { Input } from '../../input'
+import { Label } from '../../label'
 
-import styles from './styles/VideoDialog.module.css'
+import styles from '../styles/VideoDialog.module.css'
 
 type ImageDialogProps = Readonly<{
   isOpen: boolean

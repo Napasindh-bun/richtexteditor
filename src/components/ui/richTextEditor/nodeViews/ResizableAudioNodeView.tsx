@@ -11,8 +11,8 @@ import {
   normalizeAudioWidth,
   parseAudioAlign,
   toAudioWidthPx,
-} from './richTextAudioExtension'
-import styles from './styles/ResizableAudioNodeView.module.css'
+} from '../extensions/richTextAudioExtension'
+import styles from '../styles/ResizableAudioNodeView.module.css'
 
 type ResizeHandle = 'nw' | 'ne' | 'sw' | 'se'
 

@@ -16,14 +16,14 @@ import {
   DEFAULT_TABLE_PROPERTIES,
   type TableAlignment,
   type TablePropertiesValues,
-} from './tableProperties'
+} from '../table/tableProperties'
 
 export {
   DEFAULT_TABLE_PROPERTIES,
   TABLE_BORDER_STYLES,
   type TableAlignment,
   type TablePropertiesValues,
-} from './tableProperties'
+} from '../table/tableProperties'
 
 function emptyToNull(value: string): string | null {
   const trimmed = value.trim()

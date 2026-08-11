@@ -2,7 +2,7 @@ import { mergeAttributes, Node } from '@tiptap/core'
 import { NodeSelection, Plugin, TextSelection } from '@tiptap/pm/state'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 
-import { ResizableAudioNodeView } from './ResizableAudioNodeView'
+import { ResizableAudioNodeView } from '../nodeViews/ResizableAudioNodeView'
 
 export const MIN_AUDIO_WIDTH_PX = 180
 

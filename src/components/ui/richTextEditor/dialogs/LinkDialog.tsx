@@ -2,12 +2,12 @@
 
 import { useEffect, useId, useState } from 'react'
 
-import { Button } from '../button'
-import { Dialog, dialogStyles } from '../Dialog'
-import { Input } from '../input'
-import { Label } from '../label'
+import { Button } from '../../button'
+import { Dialog, dialogStyles } from '../../Dialog'
+import { Input } from '../../input'
+import { Label } from '../../label'
 
-import styles from './styles/LinkDialog.module.css'
+import styles from '../styles/LinkDialog.module.css'
 
 type LinkDialogProps = Readonly<{
   isOpen: boolean

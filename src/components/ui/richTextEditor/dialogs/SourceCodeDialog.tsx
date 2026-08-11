@@ -2,11 +2,11 @@
 
 import { useEffect, useId, useState } from 'react'
 
-import { Button } from '../button'
-import { Dialog, dialogStyles } from '../Dialog'
+import { Button } from '../../button'
+import { Dialog, dialogStyles } from '../../Dialog'
 
-import { formatHtml } from './formatHtml'
-import styles from './styles/SourceCodeDialog.module.css'
+import { formatHtml } from '../utils/formatHtml'
+import styles from '../styles/SourceCodeDialog.module.css'
 
 type SourceCodeDialogProps = Readonly<{
   isOpen: boolean

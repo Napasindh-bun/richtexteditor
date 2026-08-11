@@ -22,6 +22,9 @@ async function fakeUploadAudio(file: File) {
 
 export function App() {
   const [editorHtml, setEditorHtml] = useState(SAMPLE_HTML)
+  const [subsetHtml, setSubsetHtml] = useState(
+    '<p>Editor นี้ปิด audio / math / science แล้ว และใช้ toolbar แบบย่อ</p>',
+  )
   const [fieldHtml, setFieldHtml] = useState('')
   const [isFieldEditorOpen, setIsFieldEditorOpen] = useState(false)
 
@@ -39,6 +42,36 @@ export function App() {
           <summary>HTML output</summary>
           <pre style={styles.pre}>{editorHtml}</pre>
         </details>
+      </section>
+
+      <section style={styles.section}>
+        <h2 style={styles.sectionTitle}>TinyMCE-style plugins + toolbar (subset)</h2>
+        <p style={styles.subtitle}>
+          ไม่มี audio / math / science — และเรียงปุ่มแบบย่อ
+        </p>
+        <RichTextEditor
+          value={subsetHtml}
+          onChange={setSubsetHtml}
+          height={360}
+          plugins={[
+            'link',
+            'image',
+            'video',
+            'table',
+            'lists',
+            'codeSample',
+            'textStyle',
+            'align',
+            'indent',
+            'formatPainter',
+          ]}
+          toolbar={[
+            ['undo', 'redo'],
+            ['bold', 'italic', 'link'],
+            ['image', 'video', 'table', 'codeSample'],
+            ['preview', 'fullscreen'],
+          ]}
+        />
       </section>
 
       <section style={styles.section}>

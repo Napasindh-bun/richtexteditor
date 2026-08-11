@@ -4,25 +4,25 @@ import { useId, useState } from 'react'
 
 import { cn } from '@libs'
 
-import { Button } from '../button'
-import { Dialog, dialogStyles } from '../Dialog'
-import { Input } from '../input'
-import { Label } from '../label'
+import { Button } from '../../button'
+import { Dialog, dialogStyles } from '../../Dialog'
+import { Input } from '../../input'
+import { Label } from '../../label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../select'
+} from '../../select'
 
 import { ColorPickerDialog } from './ColorPickerDialog'
 import {
   borderWidthForStyle,
   TABLE_BORDER_STYLES,
   type TablePropertiesValues,
-} from './tableProperties'
-import styles from './styles/TablePropertiesDialog.module.css'
+} from '../table/tableProperties'
+import styles from '../styles/TablePropertiesDialog.module.css'
 
 type TablePropertiesDialogProps = Readonly<{
   isOpen: boolean
@@ -137,12 +137,15 @@ function TablePropertiesForm({
           <div className={styles.field}>
             <Label className={styles.label}>Border style</Label>
             <Select
-              value={values.borderStyle || 'solid'}
+              value={
+                (TABLE_BORDER_STYLES as readonly string[]).includes(values.borderStyle)
+                  ? values.borderStyle
+                  : 'solid'
+              }
               onValueChange={(next) =>
                 setValues((prev) => ({
                   ...prev,
                   borderStyle: next,
-                  // double/groove/ridge/inset/outset render as solid when too thin.
                   borderWidth: borderWidthForStyle(next, prev.borderWidth),
                 }))
               }

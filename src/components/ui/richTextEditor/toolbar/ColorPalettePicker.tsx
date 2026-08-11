@@ -5,10 +5,10 @@ import { Ban, Pipette } from 'lucide-react'
 
 import { cn } from '@libs'
 
-import { IconDropdownMenu } from '../IconDropdownMenu'
+import { IconDropdownMenu } from '../../IconDropdownMenu'
 
-import { ColorPickerDialog } from './ColorPickerDialog'
-import styles from './styles/RichTextEditor.module.css'
+import { ColorPickerDialog } from '../dialogs/ColorPickerDialog'
+import styles from '../styles/RichTextEditor.module.css'
 
 /** สีตัวอักษรพื้นฐาน — 2 แถว (8×2) */
 export const TEXT_COLORS = [

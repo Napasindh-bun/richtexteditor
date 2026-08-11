@@ -3,10 +3,10 @@
 import type { Editor } from '@tiptap/react'
 import { CaseLower, CaseSensitive, CaseUpper } from 'lucide-react'
 
-import { IconDropdownMenu } from '../IconDropdownMenu'
+import { IconDropdownMenu } from '../../IconDropdownMenu'
 
-import { applyTextCase, type TextCase } from './textCaseCommands'
-import styles from './styles/RichTextEditor.module.css'
+import { applyTextCase, type TextCase } from '../utils/textCaseCommands'
+import styles from '../styles/RichTextEditor.module.css'
 
 type TextCaseMenuProps = Readonly<{ editor: Editor | null }>
 

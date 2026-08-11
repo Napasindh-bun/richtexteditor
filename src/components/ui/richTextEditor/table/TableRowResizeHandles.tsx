@@ -13,8 +13,8 @@ import { createPortal } from 'react-dom'
 import type { Editor } from '@tiptap/react'
 import { TableMap } from '@tiptap/pm/tables'
 
-import { applyRowHeight, MIN_TABLE_ROW_HEIGHT } from './styledTableCellExtension'
-import styles from './styles/TableRowResizeHandles.module.css'
+import { applyRowHeight, MIN_TABLE_ROW_HEIGHT } from '../extensions/styledTableCellExtension'
+import styles from '../styles/TableRowResizeHandles.module.css'
 
 const HANDLE_THICKNESS = 6
 

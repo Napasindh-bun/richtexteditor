@@ -3,15 +3,15 @@
 import { useEffect, useRef } from 'react'
 import type { MathfieldElement } from 'mathlive'
 
-import { Button } from '../button'
-import { Dialog, dialogStyles } from '../Dialog'
+import { Button } from '../../button'
+import { Dialog, dialogStyles } from '../../Dialog'
 
 import {
   MATH_KEYBOARD_LAYOUTS,
   normalizeScienceLatex,
   SCIENCE_KEYBOARD_LAYOUTS,
-} from './scienceKeyboardLayout'
-import styles from './styles/RichTextEditor.module.css'
+} from '../utils/scienceKeyboardLayout'
+import styles from '../styles/RichTextEditor.module.css'
 
 export type MathLiveDialogVariant = 'math' | 'science'
 

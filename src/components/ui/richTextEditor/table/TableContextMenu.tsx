@@ -31,9 +31,9 @@ import {
 
 import { cn } from '@libs'
 
-import { HIGHLIGHT_COLORS } from './ColorPalettePicker'
-import { ColorPickerDialog } from './ColorPickerDialog'
-import styles from './styles/TableContextMenu.module.css'
+import { HIGHLIGHT_COLORS } from '../toolbar/ColorPalettePicker'
+import { ColorPickerDialog } from '../dialogs/ColorPickerDialog'
+import styles from '../styles/TableContextMenu.module.css'
 
 /** One-row presets (+ clear + custom picker fill the row). */
 const CELL_BG_PRESETS = HIGHLIGHT_COLORS.slice(0, 6)

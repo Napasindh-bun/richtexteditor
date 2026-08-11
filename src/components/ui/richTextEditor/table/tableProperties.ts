@@ -26,18 +26,7 @@ export const DEFAULT_TABLE_PROPERTIES: TablePropertiesValues = {
   backgroundColor: '',
 }
 
-export const TABLE_BORDER_STYLES = [
-  'solid',
-  'dotted',
-  'dashed',
-  'double',
-  'groove',
-  'ridge',
-  'inset',
-  'outset',
-  'none',
-  'hidden',
-] as const
+export const TABLE_BORDER_STYLES = ['solid', 'dashed', 'dotted'] as const
 
 /**
  * Browsers draw these styles as plain `solid` below a certain width, so picking

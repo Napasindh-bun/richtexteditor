@@ -2,10 +2,10 @@
 
 import { Upload } from 'lucide-react'
 
-import { Button } from '../button'
-import { Dialog, dialogStyles } from '../Dialog'
+import { Button } from '../../button'
+import { Dialog, dialogStyles } from '../../Dialog'
 
-import styles from './styles/VideoDialog.module.css'
+import styles from '../styles/VideoDialog.module.css'
 
 type AudioDialogProps = Readonly<{
   isOpen: boolean

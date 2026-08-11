@@ -9,12 +9,12 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 
-import { Button } from '../button'
-import { Dialog, dialogStyles } from '../Dialog'
-import { Input } from '../input'
-import { Label } from '../label'
+import { Button } from '../../button'
+import { Dialog, dialogStyles } from '../../Dialog'
+import { Input } from '../../input'
+import { Label } from '../../label'
 
-import styles from './styles/ColorPickerDialog.module.css'
+import styles from '../styles/ColorPickerDialog.module.css'
 
 type Rgb = Readonly<{ r: number; g: number; b: number }>
 type Hsv = Readonly<{ h: number; s: number; v: number }>
