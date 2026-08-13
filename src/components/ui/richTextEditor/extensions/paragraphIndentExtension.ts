@@ -4,8 +4,8 @@ import { Extension, type Command } from '@tiptap/core'
 const INDENT_STEP_PX = 40
 
 /**
- * TinyMCE puts no ceiling on indentation — a block can be pushed right until it
- * runs out of line. Only the floor at zero is enforced.
+ * Indent is first-line only (`text-indent`), so a wrapped line without Enter
+ * stays at 0. There is no ceiling — only the floor at zero is enforced.
  */
 function clampIndent(value: unknown): number {
   const parsed = Number.parseInt(String(value ?? '0'), 10)
@@ -63,18 +63,24 @@ export const ParagraphIndent = Extension.create({
         attributes: {
           indent: {
             default: 0,
+            keepOnSplit: false,
             parseHTML: (element) => {
               const explicit = element.getAttribute('data-indent')
               if (explicit) return clampIndent(explicit)
-              const pixels = Number.parseFloat(element.style.marginLeft)
-              return Number.isFinite(pixels) ? clampIndent(Math.round(pixels / INDENT_STEP_PX)) : 0
+              const fromText = Number.parseFloat(element.style.textIndent)
+              if (Number.isFinite(fromText) && fromText > 0) {
+                return clampIndent(Math.round(fromText / INDENT_STEP_PX))
+              }
+              const fromMargin = Number.parseFloat(element.style.marginLeft)
+              return Number.isFinite(fromMargin) ? clampIndent(Math.round(fromMargin / INDENT_STEP_PX)) : 0
             },
             renderHTML: (attributes) => {
               const indent = clampIndent(attributes.indent)
               return indent
                 ? {
                     'data-indent': String(indent),
-                    style: `margin-left: ${indent * INDENT_STEP_PX}px`,
+                    // First line only — wrapped lines (no Enter) stay at indent 0.
+                    style: `text-indent: ${indent * INDENT_STEP_PX}px`,
                   }
                 : {}
             },
@@ -93,6 +99,9 @@ export const ParagraphIndent = Extension.create({
 
   addKeyboardShortcuts() {
     const run = (direction: 'increase' | 'decrease') => {
+      // Tables keep Tab for cell navigation; code samples keep Tab for spaces.
+      if (this.editor.isActive('table') || this.editor.isActive('codeBlock')) return false
+
       const listType = this.editor.isActive('taskItem')
         ? 'taskItem'
         : this.editor.isActive('listItem')
@@ -103,12 +112,18 @@ export const ParagraphIndent = Extension.create({
           ? this.editor.commands.sinkListItem(listType)
           : this.editor.commands.liftListItem(listType)
       }
-      return direction === 'increase'
-        ? this.editor.commands.increaseParagraphIndent()
-        : this.editor.commands.decreaseParagraphIndent()
+
+      const applied =
+        direction === 'increase'
+          ? this.editor.commands.increaseParagraphIndent()
+          : this.editor.commands.decreaseParagraphIndent()
+      // Word keeps focus in the document even when indent is already 0.
+      return applied || this.editor.isActive('paragraph')
     }
 
     return {
+      Tab: () => run('increase'),
+      'Shift-Tab': () => run('decrease'),
       'Mod-]': () => run('increase'),
       'Mod-[': () => run('decrease'),
     }

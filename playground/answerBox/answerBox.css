@@ -1,0 +1,5 @@
+/* Kill ProseMirror's rectangular selected-node outline (it ignores border-radius). */
+span[data-answer-box].ProseMirror-selectednode,
+.answer-box-node.ProseMirror-selectednode {
+  outline: none;
+}

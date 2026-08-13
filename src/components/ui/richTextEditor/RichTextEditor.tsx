@@ -11,6 +11,7 @@ import {
 import { createPortal } from 'react-dom'
 import { posToDOMRect } from '@tiptap/core'
 import { NodeSelection } from '@tiptap/pm/state'
+import type { AnyExtension } from '@tiptap/core'
 import { EditorContent, useEditor, type Editor } from '@tiptap/react'
 import { BubbleMenu } from '@tiptap/react/menus'
 import 'katex/contrib/mhchem'
@@ -26,14 +27,22 @@ import { MathLiveDialog, type MathLiveDialogVariant } from './dialogs/MathLiveDi
 import { PreviewDialog } from './dialogs/PreviewDialog'
 import { SourceCodeDialog } from './dialogs/SourceCodeDialog'
 import { TablePropertiesDialog } from './dialogs/TablePropertiesDialog'
+import { ToolbarCustomDialog } from './dialogs/ToolbarCustomDialog'
 import { VideoDialog } from './dialogs/VideoDialog'
 import {
   hasPlugin,
+  isBuiltinToolbarItem,
   resolveEditorConfig,
+  toolbarFromTemplate,
   type PluginId,
   type ToolbarGroup,
   type ToolbarItemId,
 } from './config'
+import {
+  appendUnlistedCustomToolbarButtons,
+  type CustomToolbarButtons,
+  type EditorSetup,
+} from './customToolbar'
 import { createEditorExtensions } from './extensions/createEditorExtensions'
 import {
   applyTableProperties,
@@ -55,6 +64,11 @@ import { findMathNodeAtPos } from './utils/findMathNodeAtPos'
 import { getElementPath, getTextStats } from './utils/editorStats'
 import { getActiveMediaType, getMediaAlignment } from './utils/mediaHelpers'
 import { useMediaDialogs } from './utils/useMediaDialogs'
+import {
+  loadToolbarPreference,
+  saveToolbarPreference,
+  type ToolbarPreference,
+} from './utils/toolbarPreference'
 import contentStyles from './styles/RichTextContent.module.css'
 import styles from './styles/RichTextEditor.module.css'
 
@@ -76,9 +90,23 @@ type RichTextEditorProps = Readonly<{
   plugins?: readonly PluginId[]
   /**
    * TinyMCE-style toolbar groups (each inner array is a button group).
-   * Items whose required plugin is off are skipped. Omitted = full default toolbar.
+   * Items whose required plugin is off are skipped. When omitted, the in-toolbar
+   * Default / Full Feature / Custom switcher is shown (persisted in localStorage).
+   * Include custom button ids here the same way TinyMCE lists them in `toolbar`.
    */
   toolbar?: readonly ToolbarGroup[]
+  /**
+   * Host-registered toolbar buttons (`editor.ui.registry.addButton` in TinyMCE).
+   * Put each key in `toolbar` to place it, or omit `toolbar` to append them at the end.
+   */
+  customToolbarButtons?: CustomToolbarButtons
+  /**
+   * Extra TipTap extensions merged after the built-in stack (custom TinyMCE plugins).
+   * Memoize the array if it is created in render, or the editor will remount.
+   */
+  extensions?: readonly AnyExtension[]
+  /** Called once when the editor instance is created (`setup` in TinyMCE). */
+  setup?: EditorSetup
 }>
 
 type FormulaDialogState = Readonly<{
@@ -130,6 +158,9 @@ export function RichTextEditor({
   onUploadAudio,
   plugins: pluginsProp,
   toolbar: toolbarProp,
+  customToolbarButtons,
+  extensions: extraExtensions,
+  setup,
 }: RichTextEditorProps) {
   const shellRef = useRef<HTMLDivElement>(null)
   const editorScrollRef = useRef<HTMLDivElement>(null)
@@ -144,25 +175,61 @@ export function RichTextEditor({
   const [previewOpen, setPreviewOpen] = useState(false)
   const [codeSampleDialog, setCodeSampleDialog] = useState<CodeSampleDialogState | null>(null)
   const [formatPainterActive, setFormatPainterActive] = useState(false)
+  const [toolbarPreference, setToolbarPreference] = useState<ToolbarPreference>(loadToolbarPreference)
+  const [toolbarCustomOpen, setToolbarCustomOpen] = useState(false)
+  const hostToolbarLocked = toolbarProp !== undefined
   const linkSelectionRef = useRef<{ from: number; to: number; wasLink: boolean } | null>(null)
   const openFormulaEditorRef = useRef<(state: FormulaDialogState) => void>(() => {})
   const openCodeSampleRef = useRef<(state: CodeSampleDialogState) => void>(() => {})
   const formatPainterRef = useRef<FormatPainterSnapshot | null>(null)
   const applyFormatPainterRef = useRef<() => void>(() => {})
 
-  const editorConfig = useMemo(
-    () => resolveEditorConfig({ plugins: pluginsProp, toolbar: toolbarProp }),
-    [pluginsProp, toolbarProp],
+  const setupRef = useRef<EditorSetup | undefined>(setup)
+  setupRef.current = setup
+  const customButtonIds = useMemo(
+    () => new Set(Object.keys(customToolbarButtons ?? {})),
+    [customToolbarButtons],
   )
-  const { plugins, toolbar } = editorConfig
+
+  const editorConfig = useMemo(
+    () =>
+      resolveEditorConfig({
+        plugins: pluginsProp,
+        toolbar: hostToolbarLocked
+          ? toolbarProp
+          : toolbarFromTemplate(toolbarPreference.template, toolbarPreference.custom),
+        customButtonIds,
+      }),
+    [
+      customButtonIds,
+      hostToolbarLocked,
+      pluginsProp,
+      toolbarPreference.custom,
+      toolbarPreference.template,
+      toolbarProp,
+    ],
+  )
+  const { plugins } = editorConfig
+  const toolbar = useMemo(
+    () =>
+      hostToolbarLocked
+        ? editorConfig.toolbar
+        : appendUnlistedCustomToolbarButtons(editorConfig.toolbar, customToolbarButtons),
+    [customToolbarButtons, editorConfig.toolbar, hostToolbarLocked],
+  )
   const toolbarItemSet = useMemo(() => {
     const items = new Set<ToolbarItemId>()
     for (const group of toolbar) {
-      for (const item of group) items.add(item)
+      for (const item of group) {
+        if (isBuiltinToolbarItem(item)) items.add(item)
+      }
     }
     return items
   }, [toolbar])
-  const extensions = useMemo(() => createEditorExtensions(plugins), [plugins])
+  const extensions = useMemo(
+    () => [...createEditorExtensions(plugins), ...(extraExtensions ?? [])],
+    [extraExtensions, plugins],
+  )
 
   useEffect(() => {
     openFormulaEditorRef.current = setFormulaDialog
@@ -239,6 +306,9 @@ export function RichTextEditor({
         },
       },
     },
+    onCreate: ({ editor: created }) => {
+      setupRef.current?.(created)
+    },
     onUpdate: ({ editor: nextEditor }) => {
       onChange(nextEditor.getHTML())
     },
@@ -258,6 +328,7 @@ export function RichTextEditor({
     handleImageSelected,
     handleSaveVideoUrl,
     handleVideoSelected,
+    handleSaveAudioUrl,
     handleAudioSelected,
   } = useMediaDialogs({ editor, onUploadVideo, onUploadAudio })
 
@@ -308,7 +379,8 @@ export function RichTextEditor({
     videoDialogOpen ||
     audioDialogOpen ||
     codeSampleDialog !== null ||
-    formulaDialog !== null
+    formulaDialog !== null ||
+    toolbarCustomOpen
 
   const shouldShowBubbleMenu = useCallback(
     ({
@@ -689,6 +761,11 @@ export function RichTextEditor({
     else chain.decreaseParagraphIndent().run()
   }
 
+  const persistToolbarPreference = (next: ToolbarPreference) => {
+    setToolbarPreference(next)
+    saveToolbarPreference(next)
+  }
+
   /** Outdent stops at zero, and a list item that cannot nest any deeper cannot indent. */
   const canIndent = (direction: 'increase' | 'decrease') => {
     if (!editor) return false
@@ -777,6 +854,14 @@ export function RichTextEditor({
     >
       <EditorToolbar
         toolbar={toolbar}
+        customToolbarButtons={customToolbarButtons}
+        template={hostToolbarLocked ? undefined : toolbarPreference.template}
+        onSelectTemplate={
+          hostToolbarLocked
+            ? undefined
+            : (template) => persistToolbarPreference({ ...toolbarPreference, template })
+        }
+        onCustomizeToolbar={hostToolbarLocked ? undefined : () => setToolbarCustomOpen(true)}
         editor={editor}
         isFullscreen={isFullscreen}
         formatPainterActive={formatPainterActive}
@@ -918,6 +1003,7 @@ export function RichTextEditor({
         <AudioDialog
           isOpen={audioDialogOpen}
           onClose={() => setAudioDialogOpen(false)}
+          onSave={handleSaveAudioUrl}
           onPickFile={() => audioInputRef.current?.click()}
         />
       ) : null}
@@ -972,6 +1058,19 @@ export function RichTextEditor({
           onSave={handleSaveTableProperties}
         />
       ) : null}
+
+      {hostToolbarLocked ? null : (
+        <ToolbarCustomDialog
+          isOpen={toolbarCustomOpen}
+          initialToolbar={toolbarPreference.custom}
+          plugins={plugins}
+          onClose={() => setToolbarCustomOpen(false)}
+          onSave={(custom) => {
+            persistToolbarPreference({ template: 'custom', custom })
+            setToolbarCustomOpen(false)
+          }}
+        />
+      )}
     </div>
   )
 

@@ -26,6 +26,7 @@ type UseMediaDialogsResult = Readonly<{
   handleImageSelected: (event: ChangeEvent<HTMLInputElement>) => Promise<void>
   handleSaveVideoUrl: (url: string) => void
   handleVideoSelected: (event: ChangeEvent<HTMLInputElement>) => Promise<void>
+  handleSaveAudioUrl: (url: string) => void
   handleAudioSelected: (event: ChangeEvent<HTMLInputElement>) => Promise<void>
 }>
 
@@ -95,6 +96,12 @@ export function useMediaDialogs({
     editor?.chain().focus().insertContent({ type: 'audio', attrs: { src } }).run()
   }
 
+  const handleSaveAudioUrl = (url: string) => {
+    const trimmed = url.trim()
+    setAudioDialogOpen(false)
+    if (trimmed) insertAudio(trimmed)
+  }
+
   const handleAudioSelected = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     event.target.value = ''
@@ -124,6 +131,7 @@ export function useMediaDialogs({
     handleImageSelected,
     handleSaveVideoUrl,
     handleVideoSelected,
+    handleSaveAudioUrl,
     handleAudioSelected,
   }
 }

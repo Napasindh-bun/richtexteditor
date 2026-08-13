@@ -6,7 +6,6 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
-  Check,
   Code2,
   Eye,
   FlaskConical,
@@ -37,8 +36,20 @@ import type { Editor } from '@tiptap/react'
 import { cn } from '@libs'
 
 import { IconDropdownMenu } from '../../IconDropdownMenu'
+import {
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from '../../dropdown-menu'
 
-import type { ToolbarGroup, ToolbarItemId } from '../config'
+import {
+  isBuiltinToolbarItem,
+  type ToolbarGroup,
+  type ToolbarItemId,
+  type ToolbarSlotId,
+  type ToolbarTemplateId,
+} from '../config'
+import type { CustomToolbarButtons } from '../customToolbar'
 import { clearFormatting } from '../utils/clearFormatting'
 import styles from '../styles/RichTextEditor.module.css'
 
@@ -51,6 +62,7 @@ import { TableSizePicker } from './TableSizePicker'
 import { TextCaseMenu } from './TextCaseMenu'
 import { TextDecorationMenu } from './TextDecorationMenu'
 import { ToolbarButton, ToolbarDivider, ToolbarGroup as ToolbarGroupEl } from './ToolbarButton'
+import { ToolbarTemplatePicker } from './ToolbarTemplatePicker'
 
 export const FONT_SIZES_PX = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36] as const
 export const DEFAULT_FONT_SIZE_PX = 16
@@ -94,9 +106,76 @@ type ToolbarActions = Readonly<{
 type EditorToolbarProps = ToolbarActions &
   Readonly<{
     toolbar: readonly ToolbarGroup[]
+    customToolbarButtons?: CustomToolbarButtons
+    template?: ToolbarTemplateId
+    onSelectTemplate?: (template: ToolbarTemplateId) => void
+    onCustomizeToolbar?: () => void
   }>
 
-function renderToolbarItem(id: ToolbarItemId, actions: ToolbarActions): ReactNode {
+function renderCustomToolbarItem(
+  id: string,
+  spec: CustomToolbarButtons[string],
+  editor: Editor | null,
+): ReactNode {
+  const disabled = !editor || Boolean(spec.isDisabled?.(editor))
+  const active = editor ? Boolean(spec.isActive?.(editor)) : false
+
+  if (spec.items && spec.items.length > 0) {
+    return (
+      <IconDropdownMenu
+        key={id}
+        trigger={spec.icon}
+        triggerLabel={spec.label}
+        triggerClassName={cn(styles.toolbarButton, active && styles.toolbarButtonActive)}
+        disabled={disabled}
+      >
+        {spec.items.map((item, index) => (
+          <DropdownMenuItem
+            key={`${id}-${index}`}
+            disabled={!editor || Boolean(item.isDisabled?.(editor))}
+            onSelect={() => {
+              if (editor) item.onAction(editor)
+            }}
+          >
+            {item.icon}
+            {item.label}
+          </DropdownMenuItem>
+        ))}
+      </IconDropdownMenu>
+    )
+  }
+
+  if (!spec.onAction) return null
+  const onAction = spec.onAction
+
+  return (
+    <ToolbarButton
+      key={id}
+      label={spec.label}
+      active={active}
+      disabled={disabled}
+      onClick={() => {
+        if (editor) onAction(editor)
+      }}
+    >
+      {spec.icon}
+    </ToolbarButton>
+  )
+}
+
+function renderToolbarItem(
+  id: ToolbarSlotId,
+  actions: ToolbarActions,
+  customToolbarButtons: CustomToolbarButtons | undefined,
+): ReactNode {
+  if (!isBuiltinToolbarItem(id)) {
+    const spec = customToolbarButtons?.[id]
+    return spec ? renderCustomToolbarItem(id, spec, actions.editor) : null
+  }
+  return renderBuiltinToolbarItem(id, actions)
+}
+
+function renderBuiltinToolbarItem(id: ToolbarItemId, actions: ToolbarActions): ReactNode {
   const {
     editor,
     isFullscreen,
@@ -167,27 +246,15 @@ function renderToolbarItem(id: ToolbarItemId, actions: ToolbarActions): ReactNod
             lineHeightValue !== 'normal' && styles.toolbarButtonActive,
             !editor && styles.toolbarButtonDisabled,
           )}
-          contentClassName={`${styles.menuDropdown} ${styles.lineHeightMenu}`}
+          contentClassName={styles.lineHeightMenu}
         >
-          {({ close }) =>
-            LINE_HEIGHTS.map((lineHeight) => (
-              <button
-                key={lineHeight}
-                type="button"
-                role="menuitemradio"
-                aria-checked={lineHeightValue === lineHeight}
-                disabled={!editor}
-                className={styles.menuDropdownItem}
-                onClick={() => {
-                  onLineHeightChange(lineHeight)
-                  close()
-                }}
-              >
-                <span>{lineHeight === 'normal' ? 'Default' : lineHeight}</span>
-                {lineHeightValue === lineHeight ? <Check /> : null}
-              </button>
-            ))
-          }
+          <DropdownMenuRadioGroup value={lineHeightValue} onValueChange={onLineHeightChange}>
+            {LINE_HEIGHTS.map((lineHeight) => (
+              <DropdownMenuRadioItem key={lineHeight} value={lineHeight} disabled={!editor}>
+                {lineHeight === 'normal' ? 'Default' : lineHeight}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
         </IconDropdownMenu>
       )
     case 'bold':
@@ -462,17 +529,38 @@ function renderToolbarItem(id: ToolbarItemId, actions: ToolbarActions): ReactNod
   }
 }
 
-export function EditorToolbar({ toolbar, ...actions }: EditorToolbarProps) {
+export function EditorToolbar({
+  toolbar,
+  customToolbarButtons,
+  template,
+  onSelectTemplate,
+  onCustomizeToolbar,
+  ...actions
+}: EditorToolbarProps) {
+  const showTemplatePicker = template != null && onSelectTemplate && onCustomizeToolbar
+
   return (
     <div className={styles.toolbar} role="toolbar" aria-label="Formatting">
       {toolbar.map((group, groupIndex) => (
         <Fragment key={`group-${groupIndex}`}>
           {groupIndex > 0 ? <ToolbarDivider /> : null}
           <ToolbarGroupEl>
-            {group.map((itemId) => renderToolbarItem(itemId, actions))}
+            {group.map((itemId) => renderToolbarItem(itemId, actions, customToolbarButtons))}
           </ToolbarGroupEl>
         </Fragment>
       ))}
+      {showTemplatePicker ? (
+        <>
+          {toolbar.length > 0 ? <ToolbarDivider /> : null}
+          <ToolbarGroupEl>
+            <ToolbarTemplatePicker
+              template={template}
+              onSelect={onSelectTemplate}
+              onCustomize={onCustomizeToolbar}
+            />
+          </ToolbarGroupEl>
+        </>
+      ) : null}
     </div>
   )
 }

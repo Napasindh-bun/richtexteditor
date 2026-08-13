@@ -5,9 +5,12 @@ import { useState } from 'react'
 import { Button } from '../button'
 import { Dialog, dialogStyles } from '../Dialog'
 
+import type { AnyExtension } from '@tiptap/core'
+
 import { preventDismissForRichTextPortals } from './utils/mathLiveKeyboard'
 import { RichTextEditor } from './RichTextEditor'
 import type { PluginId, ToolbarGroup } from './config'
+import type { CustomToolbarButtons, EditorSetup } from './customToolbar'
 import styles from './styles/RichTextEditorModal.module.css'
 
 type RichTextEditorModalProps = Readonly<{
@@ -22,6 +25,9 @@ type RichTextEditorModalProps = Readonly<{
   onUploadAudio?: (file: File) => Promise<string>
   plugins?: readonly PluginId[]
   toolbar?: readonly ToolbarGroup[]
+  customToolbarButtons?: CustomToolbarButtons
+  extensions?: readonly AnyExtension[]
+  setup?: EditorSetup
 }>
 
 export function RichTextEditorModal({
@@ -34,6 +40,9 @@ export function RichTextEditorModal({
   onUploadAudio,
   plugins,
   toolbar,
+  customToolbarButtons,
+  extensions,
+  setup,
 }: RichTextEditorModalProps) {
   return (
     <Dialog
@@ -57,6 +66,9 @@ export function RichTextEditorModal({
         onUploadAudio={onUploadAudio}
         plugins={plugins}
         toolbar={toolbar}
+        customToolbarButtons={customToolbarButtons}
+        extensions={extensions}
+        setup={setup}
       />
     </Dialog>
   )
@@ -70,10 +82,22 @@ function RichTextEditorModalBody({
   onUploadAudio,
   plugins,
   toolbar,
+  customToolbarButtons,
+  extensions,
+  setup,
 }: Readonly<
   Pick<
     RichTextEditorModalProps,
-    'value' | 'onClose' | 'onSave' | 'onUploadVideo' | 'onUploadAudio' | 'plugins' | 'toolbar'
+    | 'value'
+    | 'onClose'
+    | 'onSave'
+    | 'onUploadVideo'
+    | 'onUploadAudio'
+    | 'plugins'
+    | 'toolbar'
+    | 'customToolbarButtons'
+    | 'extensions'
+    | 'setup'
   >
 >) {
   const [draft, setDraft] = useState(value)
@@ -88,6 +112,9 @@ function RichTextEditorModalBody({
           onUploadAudio={onUploadAudio}
           plugins={plugins}
           toolbar={toolbar}
+          customToolbarButtons={customToolbarButtons}
+          extensions={extensions}
+          setup={setup}
         />
       </div>
       <div className={styles.actions}>

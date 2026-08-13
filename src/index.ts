@@ -10,11 +10,22 @@ export type { MathLiveDialogVariant } from './components/ui/richTextEditor/dialo
 export {
   DEFAULT_PLUGINS,
   DEFAULT_TOOLBAR,
+  FULL_TOOLBAR,
   resolveEditorConfig,
+  toolbarFromTemplate,
 } from './components/ui/richTextEditor/config'
 export type {
   PluginId,
   ToolbarGroup,
   ToolbarItemId,
+  ToolbarSlotId,
+  ToolbarTemplateId,
   ResolvedEditorConfig,
 } from './components/ui/richTextEditor/config'
+export type {
+  CustomToolbarButton,
+  CustomToolbarButtons,
+  CustomToolbarMenuItem,
+  EditorSetup,
+} from './components/ui/richTextEditor/customToolbar'
+export type { Editor } from '@tiptap/react'

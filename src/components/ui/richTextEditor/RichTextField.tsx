@@ -2,12 +2,15 @@
 
 import { useLayoutEffect, useRef, useState } from 'react'
 
+import type { AnyExtension } from '@tiptap/core'
+
 import { cn } from '@libs'
 import { hasRichTextContent } from '@utils/editor/richText'
 
 import { RichTextEditorModal } from './RichTextEditorModal'
 import { RichTextHtmlPreview } from './RichTextHtmlPreview'
 import type { PluginId, ToolbarGroup } from './config'
+import type { CustomToolbarButtons, EditorSetup } from './customToolbar'
 import styles from './styles/RichTextField.module.css'
 
 type RichTextFieldProps = Readonly<{
@@ -33,6 +36,9 @@ type RichTextFieldProps = Readonly<{
   onUploadAudio?: (file: File) => Promise<string>
   plugins?: readonly PluginId[]
   toolbar?: readonly ToolbarGroup[]
+  customToolbarButtons?: CustomToolbarButtons
+  extensions?: readonly AnyExtension[]
+  setup?: EditorSetup
 }>
 
 /**
@@ -56,6 +62,9 @@ export function RichTextField({
   onUploadAudio,
   plugins,
   toolbar,
+  customToolbarButtons,
+  extensions,
+  setup,
 }: RichTextFieldProps) {
   const emptyLabel = placeholder || label
   const hasContent = hasRichTextContent(value, plainText)
@@ -111,6 +120,9 @@ export function RichTextField({
         onUploadAudio={onUploadAudio}
         plugins={plugins}
         toolbar={toolbar}
+        customToolbarButtons={customToolbarButtons}
+        extensions={extensions}
+        setup={setup}
       />
     </div>
   )

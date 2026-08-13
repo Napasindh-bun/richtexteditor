@@ -1,70 +1,54 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
-type IconDropdownMenuProps = {
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from './dropdown-menu'
+
+type IconDropdownMenuProps = Readonly<{
   trigger: ReactNode
   triggerLabel: string
   wrapperClassName?: string
   triggerClassName?: string
   contentClassName?: string
+  align?: 'start' | 'center' | 'end'
+  disabled?: boolean
   children: ReactNode | ((actions: { close: () => void }) => ReactNode)
-}
+}>
 
+/** Toolbar dropdown built on Radix Dropdown Menu. `modal={false}` + mousedown
+ * preventDefault keep the TipTap selection (including inside BubbleMenu). */
 function IconDropdownMenu({
   trigger,
   triggerLabel,
   wrapperClassName,
   triggerClassName,
   contentClassName,
+  align = 'start',
+  disabled,
   children,
-}: Readonly<IconDropdownMenuProps>) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  const toggleMenu = useCallback((event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation()
-    setMenuOpen((prev) => !prev)
-  }, [])
-
-  const closeMenu = useCallback(() => {
-    setMenuOpen(false)
-  }, [])
-
-  useEffect(() => {
-    if (!menuOpen) return
-
-    const handleClickOutside = (event: Event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [menuOpen])
+}: IconDropdownMenuProps) {
+  const [open, setOpen] = useState(false)
 
   return (
-    <div ref={menuRef} className={wrapperClassName}>
-      <button
-        type="button"
-        // Preserve the editor selection while opening a toolbar dropdown.
-        // This is required inside TipTap's BubbleMenu, which hides on blur.
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={toggleMenu}
-        className={triggerClassName}
-        aria-label={triggerLabel}
-        aria-expanded={menuOpen}
-        aria-haspopup="menu"
-      >
-        {trigger}
-      </button>
-      {menuOpen ? (
-        <div className={contentClassName} role="menu">
-          {typeof children === 'function' ? children({ close: closeMenu }) : children}
-        </div>
-      ) : null}
-    </div>
+    <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
+      <div className={wrapperClassName}>
+        <DropdownMenuTrigger
+          disabled={disabled}
+          aria-label={triggerLabel}
+          className={triggerClassName}
+          onMouseDown={(event) => event.preventDefault()}
+        >
+          {trigger}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align={align}
+          className={contentClassName}
+          onCloseAutoFocus={(event) => event.preventDefault()}
+        >
+          {typeof children === 'function' ? children({ close: () => setOpen(false) }) : children}
+        </DropdownMenuContent>
+      </div>
+    </DropdownMenu>
   )
 }
 

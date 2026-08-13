@@ -1,11 +1,19 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { TextSelection } from '@tiptap/pm/state'
 import type { Editor } from '@tiptap/react'
 
 import { cn } from '@libs'
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from '../../dropdown-menu'
 import { clearFormatting } from '../utils/clearFormatting'
 import { applyTextCase } from '../utils/textCaseCommands'
 import styles from '../styles/RichTextEditor.module.css'
@@ -26,6 +34,15 @@ type MenuBarProps = Readonly<{
   onOpenSourceCode: () => void
 }>
 
+type MenuEntry =
+  | { type: 'separator' }
+  | {
+      label: string
+      shortcut?: string
+      disabled?: boolean
+      onClick: () => void
+    }
+
 export function MenuBar({
   editor,
   isFullscreen,
@@ -42,25 +59,8 @@ export function MenuBar({
   onOpenSourceCode,
 }: MenuBarProps) {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
-  const menubarRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!openMenu) return
-    const onPointerDown = (event: PointerEvent) => {
-      if (!menubarRef.current?.contains(event.target as Node)) {
-        setOpenMenu(null)
-      }
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    return () => document.removeEventListener('pointerdown', onPointerDown)
-  }, [openMenu])
-
-  const run = (action: () => void) => {
-    action()
-    setOpenMenu(null)
-  }
-
-  const menus = [
+  const menus: ReadonlyArray<{ id: string; label: string; items: readonly MenuEntry[] }> = [
     {
       id: 'edit',
       label: 'Edit',
@@ -77,7 +77,7 @@ export function MenuBar({
           disabled: !editor?.can().redo(),
           onClick: () => editor?.chain().focus().redo().run(),
         },
-        { type: 'separator' as const },
+        { type: 'separator' },
         {
           label: 'Select all',
           shortcut: 'Ctrl+A',
@@ -101,7 +101,7 @@ export function MenuBar({
         { label: 'Audio…', onClick: onInsertAudio },
         { label: 'Link…', onClick: onOpenLink },
         { label: 'Table…', onClick: onInsertTable },
-        { type: 'separator' as const },
+        { type: 'separator' },
         { label: 'Math formula…', onClick: onInsertMath },
         { label: 'Science formula…', onClick: onInsertScience },
       ],
@@ -140,10 +140,9 @@ export function MenuBar({
         },
         {
           label: 'Double underline',
-          onClick: () =>
-            editor?.chain().focus().unsetUnderline().toggleDoubleUnderline().run(),
+          onClick: () => editor?.chain().focus().unsetUnderline().toggleDoubleUnderline().run(),
         },
-        { type: 'separator' as const },
+        { type: 'separator' },
         {
           label: 'lowercase',
           onClick: () => {
@@ -162,7 +161,7 @@ export function MenuBar({
             if (editor) applyTextCase(editor, 'titlecase')
           },
         },
-        { type: 'separator' as const },
+        { type: 'separator' },
         {
           label: 'Clear formatting',
           onClick: () => {
@@ -181,7 +180,7 @@ export function MenuBar({
           disabled: !editor?.isActive('table'),
           onClick: onOpenTableProperties,
         },
-        { type: 'separator' as const },
+        { type: 'separator' },
         {
           label: 'Delete table',
           disabled: !editor?.isActive('table'),
@@ -200,52 +199,47 @@ export function MenuBar({
   ]
 
   return (
-    <div ref={menubarRef} className={styles.menubar} role="menubar" aria-label="Editor menu">
+    <div className={styles.menubar} role="menubar" aria-label="Editor menu">
       {menus.map((menu) => (
-        <div key={menu.id} className={styles.menuItem}>
-          <button
-            type="button"
+        <DropdownMenu
+          key={menu.id}
+          modal={false}
+          open={openMenu === menu.id}
+          onOpenChange={(open) => setOpenMenu(open ? menu.id : null)}
+        >
+          <DropdownMenuTrigger
             className={cn(styles.menuButton, openMenu === menu.id && styles.menuButtonOpen)}
-            aria-haspopup="menu"
-            aria-expanded={openMenu === menu.id}
-            onClick={() => setOpenMenu((prev) => (prev === menu.id ? null : menu.id))}
+            onMouseDown={(event) => event.preventDefault()}
             onMouseEnter={() => {
               if (openMenu) setOpenMenu(menu.id)
             }}
           >
             {menu.label}
-          </button>
-          {openMenu === menu.id ? (
-            <div className={styles.menuDropdown} role="menu">
-              {menu.items.map((item, index) => {
-                if ('type' in item && item.type === 'separator') {
-                  return <div key={`sep-${index}`} className={styles.menuDropdownSeparator} />
-                }
-                const entry = item as {
-                  label: string
-                  shortcut?: string
-                  disabled?: boolean
-                  onClick: () => void
-                }
-                return (
-                  <button
-                    key={entry.label}
-                    type="button"
-                    role="menuitem"
-                    disabled={entry.disabled}
-                    className={styles.menuDropdownItem}
-                    onClick={() => run(entry.onClick)}
-                  >
-                    <span>{entry.label}</span>
-                    {entry.shortcut ? (
-                      <span className={styles.menuDropdownShortcut}>{entry.shortcut}</span>
-                    ) : null}
-                  </button>
-                )
-              })}
-            </div>
-          ) : null}
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className={styles.menuDropdown}
+            onCloseAutoFocus={(event) => event.preventDefault()}
+          >
+            {menu.items.map((item, index) => {
+              if (!('onClick' in item)) {
+                return <DropdownMenuSeparator key={`sep-${index}`} />
+              }
+              return (
+                <DropdownMenuItem
+                  key={item.label}
+                  disabled={item.disabled}
+                  onSelect={item.onClick}
+                >
+                  {item.label}
+                  {item.shortcut ? (
+                    <DropdownMenuShortcut>{item.shortcut}</DropdownMenuShortcut>
+                  ) : null}
+                </DropdownMenuItem>
+              )
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       ))}
     </div>
   )

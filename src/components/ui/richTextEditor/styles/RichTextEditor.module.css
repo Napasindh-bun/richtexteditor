@@ -70,17 +70,45 @@
   }
 
   .menuDropdown {
-    position: absolute;
-    left: 0;
-    top: 100%;
-    z-index: 40;
-    min-width: 200px;
-    margin-top: 0;
+    min-width: 12.5rem;
     padding: 4px 0;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    background: #fff;
-    box-shadow: 0 4px 8px rgba(34, 47, 62, 0.15);
+  }
+
+  .menuDropdownItem {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 6px 12px;
+    border: 0;
+    background: transparent;
+    color: #222f3e;
+    font: inherit;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .menuDropdownItem:hover:not(:disabled) {
+    background: #2d70a4;
+    color: #fff;
+  }
+
+  .menuDropdownItem:disabled {
+    cursor: default;
+    opacity: 0.4;
+  }
+
+  .menuDropdownShortcut {
+    font-size: 12px;
+    opacity: 0.65;
+  }
+
+  .menuDropdownSeparator {
+    height: 1px;
+    margin: 4px 0;
+    background: #ccc;
   }
 
   .menuDropdownItem {
@@ -220,7 +248,6 @@
   }
 
   .lineHeightMenu {
-    top: calc(100% + 2px);
     min-width: 9rem;
   }
 
@@ -234,7 +261,6 @@
   }
 
   .textDecorationMenu {
-    top: calc(100% + 2px);
     min-width: 13rem;
   }
 
@@ -297,8 +323,32 @@
     position: relative;
   }
 
+  .templatePickerWrap {
+    position: relative;
+  }
+
+  .templatePickerMenu {
+    min-width: 11rem;
+  }
+
+  .templatePickerLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .templatePickerLabel :global(svg) {
+    width: 16px;
+    height: 16px;
+  }
+
+  .templatePickerCheckSlot {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+  }
+
   .textCaseMenu {
-    top: calc(100% + 2px);
     min-width: 11rem;
   }
 
@@ -315,16 +365,8 @@
 
   .tablePicker,
   .colorPicker {
-    position: absolute;
-    left: 0;
-    top: calc(100% + 2px);
-    z-index: 40;
     min-width: 11.5rem;
     padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    background: #fff;
-    box-shadow: 0 4px 8px rgba(34, 47, 62, 0.15);
   }
 
   .colorPicker {

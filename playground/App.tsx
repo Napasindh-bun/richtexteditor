@@ -1,10 +1,20 @@
 import { useState } from 'react'
+import { ChevronDown, Square, Stamp } from 'lucide-react'
 
 import {
   RichTextEditor,
   RichTextField,
   RichTextHtmlPreview,
 } from '../src/index'
+
+import { ANSWER_BOX_TYPE, AnswerBox } from './answerBox/answerBoxExtension'
+import {
+  CHOICE_DROPDOWN_TYPE,
+  ChoiceDropdown,
+  DEFAULT_DROPDOWN_OPTIONS,
+} from './choiceDropdown/choiceDropdownExtension'
+
+const PLAYGROUND_WIDGET_EXTENSIONS = [AnswerBox, ChoiceDropdown]
 
 const SAMPLE_HTML =
   '<p>Try editing this text — use the toolbar for <strong>bold</strong>, <em>italic</em>, lists, tables, images, audio, video, source code, fullscreen, and math.</p>'
@@ -25,6 +35,9 @@ export function App() {
   const [subsetHtml, setSubsetHtml] = useState(
     '<p>Editor นี้ปิด audio / math / science แล้ว และใช้ toolbar แบบย่อ</p>',
   )
+  const [customHtml, setCustomHtml] = useState(
+    '<p>เมืองหลวงของประเทศไทยคือ <span data-answer-box="true" data-value=""></span> ภาษาทางการคือ <span data-choice-dropdown="true" data-options="[&quot;ภาษาไทย&quot;,&quot;English&quot;]" data-value=""></span></p>',
+  )
   const [fieldHtml, setFieldHtml] = useState('')
   const [isFieldEditorOpen, setIsFieldEditorOpen] = useState(false)
 
@@ -44,33 +57,67 @@ export function App() {
         </details>
       </section>
 
+
       <section style={styles.section}>
-        <h2 style={styles.sectionTitle}>TinyMCE-style plugins + toolbar (subset)</h2>
+        <h2 style={styles.sectionTitle}>Custom toolbar button (TinyMCE-style)</h2>
         <p style={styles.subtitle}>
-          ไม่มี audio / math / science — และเรียงปุ่มแบบย่อ
+          Dropdown บน toolbar สำหรับแทรกกล่องคำตอบหรือ Dropdown ในเนื้อหา — ดับเบิลคลิกเพื่อแก้ไข
         </p>
         <RichTextEditor
-          value={subsetHtml}
-          onChange={setSubsetHtml}
-          height={360}
-          plugins={[
-            'link',
-            'image',
-            'video',
-            'table',
-            'lists',
-            'codeSample',
-            'textStyle',
-            'align',
-            'indent',
-            'formatPainter',
-          ]}
+          value={customHtml}
+          onChange={setCustomHtml}
+          height={280}
+          plugins={['link', 'image', 'lists', 'textStyle', 'align']}
+          extensions={PLAYGROUND_WIDGET_EXTENSIONS}
           toolbar={[
             ['undo', 'redo'],
-            ['bold', 'italic', 'link'],
-            ['image', 'video', 'table', 'codeSample'],
-            ['preview', 'fullscreen'],
+            ['bold', 'italic'],
+            ['insertDisclaimer', 'insertWidgets'],
           ]}
+          customToolbarButtons={{
+            insertDisclaimer: {
+              label: 'Insert disclaimer',
+              icon: <Stamp />,
+              onAction: (editor) => {
+                editor
+                  .chain()
+                  .focus()
+                  .insertContent('<p><em>Disclaimer: เนื้อหานี้สร้างจากปุ่ม custom</em></p>')
+                  .run()
+              },
+            },
+            insertWidgets: {
+              label: 'Insert widget',
+              icon: <ChevronDown />,
+              items: [
+                {
+                  label: 'กล่องคำตอบ',
+                  icon: <Square />,
+                  onAction: (editor) => {
+                    editor
+                      .chain()
+                      .focus()
+                      .insertContent({ type: ANSWER_BOX_TYPE, attrs: { value: '' } })
+                      .run()
+                  },
+                },
+                {
+                  label: 'Dropdown',
+                  icon: <ChevronDown />,
+                  onAction: (editor) => {
+                    editor
+                      .chain()
+                      .focus()
+                      .insertContent({
+                        type: CHOICE_DROPDOWN_TYPE,
+                        attrs: { options: [...DEFAULT_DROPDOWN_OPTIONS], value: '' },
+                      })
+                      .run()
+                  },
+                },
+              ],
+            },
+          }}
         />
       </section>
 

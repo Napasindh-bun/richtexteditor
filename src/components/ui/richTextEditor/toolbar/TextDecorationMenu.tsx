@@ -1,11 +1,12 @@
 'use client'
 
-import { Check, Strikethrough, Subscript, Superscript, Underline as UnderlineIcon } from 'lucide-react'
+import { Strikethrough, Subscript, Superscript, Underline as UnderlineIcon } from 'lucide-react'
 import type { Editor } from '@tiptap/react'
 
 import { cn } from '@libs'
 
 import { IconDropdownMenu } from '../../IconDropdownMenu'
+import { DropdownMenuCheckboxItem } from '../../dropdown-menu'
 
 import styles from '../styles/RichTextEditor.module.css'
 
@@ -47,30 +48,23 @@ export function TextDecorationMenu({ editor }: Readonly<{ editor: Editor | null 
       triggerLabel="Text decoration"
       wrapperClassName={styles.textDecorationWrap}
       triggerClassName={cn(styles.toolbarButton, active && styles.toolbarButtonActive)}
-      contentClassName={`${styles.menuDropdown} ${styles.textDecorationMenu}`}
+      contentClassName={styles.textDecorationMenu}
     >
-      {({ close }) =>
-        items.map((item) => (
-          <button
-            key={item.name}
-            type="button"
-            role="menuitemcheckbox"
-            aria-checked={Boolean(editor?.isActive(item.name))}
-            disabled={!editor}
-            className={styles.menuDropdownItem}
-            onClick={() => {
-              if (editor) runTextDecoration(editor, item.name)
-              close()
-            }}
-          >
-            <span className={styles.textCaseMenuLabel}>
-              {item.icon}
-              {item.label}
-            </span>
-            {editor?.isActive(item.name) ? <Check className={styles.menuItemCheck} /> : null}
-          </button>
-        ))
-      }
+      {items.map((item) => (
+        <DropdownMenuCheckboxItem
+          key={item.name}
+          checked={Boolean(editor?.isActive(item.name))}
+          disabled={!editor}
+          onSelect={() => {
+            if (editor) runTextDecoration(editor, item.name)
+          }}
+        >
+          <span className={styles.textCaseMenuLabel}>
+            {item.icon}
+            {item.label}
+          </span>
+        </DropdownMenuCheckboxItem>
+      ))}
     </IconDropdownMenu>
   )
 }

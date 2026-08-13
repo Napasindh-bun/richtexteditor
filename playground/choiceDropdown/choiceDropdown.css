@@ -1,0 +1,32 @@
+.choice-dropdown-node.ProseMirror-selectednode {
+  outline: none;
+}
+
+.choice-dropdown-select {
+  display: inline-block;
+  min-width: 112px;
+  max-width: 180px;
+  margin: 0 4px;
+  padding: 1px 22px 1px 8px;
+  vertical-align: baseline;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  background: #fff
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>")
+    no-repeat right 6px center;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #0f172a;
+  cursor: pointer;
+  appearance: none;
+}
+
+.choice-dropdown-select:disabled {
+  color: #94a3b8;
+}
+
+.choice-dropdown-node.is-selected .choice-dropdown-select {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px #3b82f6;
+}

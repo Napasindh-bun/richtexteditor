@@ -32,7 +32,8 @@
   }
 
   .content :global(p) {
-    margin: 0.5em 0;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
     font-weight: 400;
   }
 
@@ -260,7 +261,8 @@
    */
   .content :global(td p),
   .content :global(th p) {
-    margin: 0.5em 0;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
   }
 
   /* ── Code samples ───────────────────────────────────────── */

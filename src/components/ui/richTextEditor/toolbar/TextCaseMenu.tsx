@@ -4,6 +4,7 @@ import type { Editor } from '@tiptap/react'
 import { CaseLower, CaseSensitive, CaseUpper } from 'lucide-react'
 
 import { IconDropdownMenu } from '../../IconDropdownMenu'
+import { DropdownMenuItem } from '../../dropdown-menu'
 
 import { applyTextCase, type TextCase } from '../utils/textCaseCommands'
 import styles from '../styles/RichTextEditor.module.css'
@@ -27,28 +28,20 @@ export function TextCaseMenu({ editor }: TextCaseMenuProps) {
       triggerLabel="Change text case"
       wrapperClassName={styles.textCaseWrap}
       triggerClassName={styles.toolbarButton}
-      contentClassName={`${styles.menuDropdown} ${styles.textCaseMenu}`}
+      contentClassName={styles.textCaseMenu}
     >
-      {({ close }) =>
-        OPTIONS.map(({ mode, label, icon: Icon }) => (
-          <button
-            key={mode}
-            type="button"
-            role="menuitem"
-            disabled={!editor}
-            className={styles.menuDropdownItem}
-            onClick={() => {
-              if (editor) applyTextCase(editor, mode)
-              close()
-            }}
-          >
-            <span className={styles.textCaseMenuLabel}>
-              <Icon />
-              {label}
-            </span>
-          </button>
-        ))
-      }
+      {OPTIONS.map(({ mode, label, icon: Icon }) => (
+        <DropdownMenuItem
+          key={mode}
+          disabled={!editor}
+          onSelect={() => {
+            if (editor) applyTextCase(editor, mode)
+          }}
+        >
+          <Icon />
+          {label}
+        </DropdownMenuItem>
+      ))}
     </IconDropdownMenu>
   )
 }
